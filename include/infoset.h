@@ -9,7 +9,12 @@
 namespace cfr {
 
 // Solver variant
-enum class Mode { CFR, CFR_PLUS };
+// CFR:      vanilla CFR, uniform strategy-sum weighting
+// CFR_PLUS: regret flooring + linear (t) strategy-sum weighting
+// DCFR:     Discounted CFR+ (Brown & Sandholm 2019)
+//           alpha=1.5 discount on positive regrets, floor negatives,
+//           quadratic (t^2) strategy-sum weighting — ~100x faster convergence
+enum class Mode { CFR, CFR_PLUS, DCFR };
 
 struct InfoNode {
     double regret_sum[4];

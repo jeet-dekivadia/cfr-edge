@@ -2,6 +2,9 @@
 """
 Plot exploitability convergence curves from CSV outputs.
 Usage: python scripts/plot_convergence.py
+
+Produces per-game PNG plots (log-scale Y axis) in results/.
+Also prints a text summary table.
 """
 
 import os
@@ -17,39 +20,68 @@ try:
     HAS_MPL = True
 except ImportError:
     HAS_MPL = False
-    print("matplotlib not found, will output text summary only")
+    print("matplotlib not found — text summary only. pip install matplotlib to enable plots.")
+
+
+COLORS = {
+    'CFR':              '#4e79a7',
+    'CFR+':             '#f28e2b',
+    'DCFR':             '#e15759',
+    'CFR_SoA':          '#76b7b2',
+    'full':             '#4e79a7',
+    'strength_buckets': '#f28e2b',
+    'no_raise':         '#e15759',
+    'strength+no_raise':'#76b7b2',
+}
+
+LINESTYLES = {
+    'CFR':              '-',
+    'CFR+':             '--',
+    'DCFR':             '-.',
+    'CFR_SoA':          ':',
+}
 
 
 def read_csv(path):
-    """Read convergence CSV, return dict of label -> [(iter, expl)]"""
+    """Return dict of label -> [(iter, expl)] sorted by iter."""
     curves = defaultdict(list)
     with open(path) as f:
         reader = csv.DictReader(f)
         for row in reader:
-            label = row.get('variant') or row.get('label') or row.get('scheme', 'unknown')
-            it = int(row['iteration'])
-            ex = float(row['exploitability'])
-            curves[label].append((it, ex))
+            label = (row.get('variant') or row.get('label')
+                     or row.get('scheme') or 'unknown')
+            curves[label].append((int(row['iteration']), float(row['exploitability'])))
     for k in curves:
         curves[k].sort()
     return curves
 
 
-def plot_curves(curves, title, outpath):
+def plot_curves(curves, title, outpath, nash_ref=None):
     if not HAS_MPL:
         return
-    fig, ax = plt.subplots(figsize=(8, 5))
-    for label, data in sorted(curves.items()):
-        iters = [d[0] for d in data]
-        expls = [d[1] for d in data]
-        ax.plot(iters, expls, label=label, linewidth=1.5)
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
-    ax.set_xlabel('Iteration')
-    ax.set_ylabel('Exploitability')
-    ax.set_title(title)
-    ax.set_yscale('log')
-    ax.legend()
-    ax.grid(True, alpha=0.3)
+    for ax, yscale in zip(axes, ('linear', 'log')):
+        for label, data in sorted(curves.items()):
+            iters = [d[0] for d in data]
+            expls = [d[1] for d in data]
+            color = COLORS.get(label, None)
+            ls    = LINESTYLES.get(label, '-')
+            ax.plot(iters, expls, label=label, linewidth=2,
+                    color=color, linestyle=ls)
+
+        if nash_ref is not None:
+            ax.axhline(nash_ref, color='gray', linestyle=':', linewidth=1,
+                       label=f'Nash ({nash_ref:.4f})')
+
+        ax.set_xlabel('Iteration', fontsize=11)
+        ax.set_ylabel('Exploitability', fontsize=11)
+        ax.set_title(f'{title} — {"linear" if yscale == "linear" else "log"} scale',
+                     fontsize=12)
+        ax.set_yscale(yscale)
+        ax.legend(fontsize=9)
+        ax.grid(True, alpha=0.3, which='both')
+
     fig.tight_layout()
     fig.savefig(outpath, dpi=150)
     plt.close(fig)
@@ -57,36 +89,57 @@ def plot_curves(curves, title, outpath):
 
 
 def text_summary(curves, title):
-    print(f"\n--- {title} ---")
+    print(f"\n{'─'*60}")
+    print(f"  {title}")
+    print(f"{'─'*60}")
+    header = f"  {'Algorithm':<22} {'Final expl':>14}  {'Iters':>8}"
+    print(header)
+    print(f"  {'-'*54}")
     for label, data in sorted(curves.items()):
-        if data:
-            last = data[-1]
-            print(f"  {label:25s} final_expl={last[1]:.6e}  (iter {last[0]})")
+        if not data:
+            continue
+        last = data[-1]
+        # find iteration where exploitability first dropped below 0.01
+        milestone = next(((it, ex) for it, ex in data if ex < 0.01), None)
+        ms_str = f"  (<0.01 @ iter {milestone[0]})" if milestone else ""
+        print(f"  {label:<22} {last[1]:>14.6e}  {last[0]:>8}{ms_str}")
+    print()
 
 
 def main():
     results_dir = os.path.join(os.path.dirname(__file__), '..', 'results')
-    plots_dir = results_dir
 
     files = {
-        'kuhn_convergence.csv': ('Kuhn Poker: CFR Convergence', 'kuhn_convergence.png'),
-        'leduc_convergence.csv': ('Leduc Hold\'em: CFR Convergence', 'leduc_convergence.png'),
-        'abstraction_comparison.csv': ('Leduc Abstraction Comparison', 'abstraction_comparison.png'),
+        'kuhn_convergence.csv': (
+            'Kuhn Poker — CFR/CFR+/DCFR Convergence',
+            'kuhn_convergence.png',
+            0.0,   # Nash exploitability = 0
+        ),
+        'leduc_convergence.csv': (
+            "Leduc Hold'em — CFR/CFR+/DCFR Convergence",
+            'leduc_convergence.png',
+            None,
+        ),
+        'abstraction_comparison.csv': (
+            'Leduc — Abstraction Scheme Comparison',
+            'abstraction_comparison.png',
+            None,
+        ),
     }
 
     found_any = False
-    for csv_name, (title, png_name) in files.items():
+    for csv_name, (title, png_name, nash_ref) in files.items():
         csv_path = os.path.join(results_dir, csv_name)
         if not os.path.exists(csv_path):
-            print(f"  skipping {csv_name} (not found)")
+            print(f"  skipping {csv_name} (not found — run the solver first)")
             continue
         found_any = True
         curves = read_csv(csv_path)
         text_summary(curves, title)
-        plot_curves(curves, title, os.path.join(plots_dir, png_name))
+        plot_curves(curves, title, os.path.join(results_dir, png_name), nash_ref=nash_ref)
 
     if not found_any:
-        print("No CSV files found in results/. Run the solver first.")
+        print("No result CSVs found in results/. Build and run cfr_solver first.")
         sys.exit(1)
 
 

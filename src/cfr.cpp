@@ -2,6 +2,7 @@
 #include "kuhn.h"
 #include "leduc.h"
 #include <chrono>
+#include <cmath>
 #include <iostream>
 
 #ifdef HAS_OPENMP
@@ -43,10 +44,8 @@ static double traverse(SoAStore& store, int c0, int c1,
         return payoff(c0, c1, hist);
 
     int player = hist.size() % 2 == 0 ? 0 : 1;
-    // handle "pb" case: length 2 -> player 0
-    // already correct since 2%2==0
-
     int card = (player == 0) ? c0 : c1;
+
     char buf[8];
     buf[0] = card_name[card]; buf[1] = ':';
     int len = 2;
@@ -60,7 +59,7 @@ static double traverse(SoAStore& store, int c0, int c1,
     strat[1] = store.get_strategy(g, idx, 1);
 
     double util[2], node_util = 0.0;
-    char ac[] = {'p', 'b'};
+    const char ac[] = {'p', 'b'};
 
     for (int a = 0; a < 2; a++) {
         double nr0 = r0, nr1 = r1;
@@ -69,16 +68,20 @@ static double traverse(SoAStore& store, int c0, int c1,
         node_util += strat[a] * util[a];
     }
 
-    double cf = (player == 0) ? r1 : r0;
-    double my = (player == 0) ? r0 : r1;
+    double cf   = (player == 0) ? r1 : r0;
+    double my   = (player == 0) ? r0 : r1;
     double sign = (player == 0) ? 1.0 : -1.0;
 
     for (int a = 0; a < 2; a++)
         store.add_regret(g, idx, a, cf * sign * (util[a] - node_util));
 
-    double w = (mode == Mode::CFR_PLUS) ? (double)iter : 1.0;
+    double weight;
+    if      (mode == Mode::CFR_PLUS) weight = (double)iter;
+    else if (mode == Mode::DCFR)     weight = (double)iter * (double)iter;
+    else                             weight = 1.0;
+
     for (int a = 0; a < 2; a++)
-        store.add_strategy_sum(g, idx, a, w * my * strat[a]);
+        store.add_strategy_sum(g, idx, a, weight * my * strat[a]);
 
     return node_util;
 }
@@ -92,7 +95,7 @@ TrainResult run_training(const TrainConfig& config) {
     auto t0 = std::chrono::high_resolution_clock::now();
 
     if (!config.use_soa) {
-        // standard AoS path
+        // AoS path — delegates to game-specific train()
         InfoMap nodes;
         std::vector<std::pair<int,double>> curve;
 
@@ -105,56 +108,55 @@ TrainResult run_training(const TrainConfig& config) {
         }
         result.exploit_curve = curve;
         result.final_exploitability = curve.empty() ? 0.0 : curve.back().second;
+
     } else {
-        // SoA path (Kuhn only for now, Leduc more complex)
+        // SoA path (Kuhn only for now; Leduc falls back to AoS)
         if (config.game == Game::KUHN) {
             SoAStore store;
             constexpr int deals[][2] = {{0,1},{0,2},{1,0},{1,2},{2,0},{2,1}};
 
             for (int t = 1; t <= config.iterations; t++) {
-                // batch compute strategies before each traversal
-                store.batch_compute_strategies();
 
-                for (auto& d : deals) {
-                    kuhn_soa::traverse(store, d[0], d[1], "", 1.0, 1.0,
-                                       config.mode, t);
+                // DCFR: discount before computing strategies for this iteration
+                if (config.mode == Mode::DCFR) {
+                    double alpha  = 1.5;
+                    double pt     = std::pow((double)t, alpha);
+                    double factor = pt / (pt + 1.0);
+                    store.batch_discount_regrets(factor);
                 }
 
-                if (config.mode == Mode::CFR_PLUS)
+                store.batch_compute_strategies();
+
+                for (const auto& d : deals)
+                    kuhn_soa::traverse(store, d[0], d[1], "", 1.0, 1.0, config.mode, t);
+
+                if (config.mode == Mode::CFR_PLUS || config.mode == Mode::DCFR)
                     store.batch_floor_regrets();
 
                 if (t == 1 || t % config.eval_every == 0 || t == config.iterations) {
-                    // compute exploitability using the InfoMap-based evaluator
-                    // (build a temporary InfoMap from the SoA store)
+                    // Build a temporary InfoMap from the SoA store to use the
+                    // infoset-level exploitability evaluator.
                     InfoMap tmp;
-                    for (auto& [key, loc] : store.all_keys()) {
+                    for (const auto& [key, loc] : store.all_keys()) {
                         int g = loc.first, idx = loc.second;
                         int na = store.num_actions(g);
                         InfoNode nd(na);
                         store.get_average_strategy(g, idx, nd.strategy_sum);
-                        // hack: put avg strategy directly in strategy_sum with norm=1
-                        // the get_average_strategy call will just renormalize
-                        double sum = 0;
-                        for (int a = 0; a < na; a++) sum += nd.strategy_sum[a];
-                        if (sum > 0) {
-                            for (int a = 0; a < na; a++)
-                                nd.strategy_sum[a] = nd.strategy_sum[a]; // already normalized by get_average_strategy
-                        }
                         tmp[key] = nd;
                     }
-                    double expl = kuhn::exploitability(tmp);
-                    result.exploit_curve.push_back({t, expl});
+                    result.exploit_curve.push_back({t, kuhn::exploitability(tmp)});
                 }
             }
             result.num_infosets = store.total_nodes();
             result.final_exploitability = result.exploit_curve.empty()
                 ? 0.0 : result.exploit_curve.back().second;
+
         } else {
-            // leduc SoA: fallback to AoS
+            // Leduc SoA: fall back to AoS (Leduc tree is too complex for SoA path)
             InfoMap nodes;
             auto curve = leduc::train(nodes, config.iterations, config.mode, config.eval_every);
             result.exploit_curve = curve;
-            result.num_infosets = nodes.size();
+            result.num_infosets  = nodes.size();
             result.final_exploitability = curve.empty() ? 0.0 : curve.back().second;
         }
     }

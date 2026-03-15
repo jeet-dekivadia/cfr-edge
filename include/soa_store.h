@@ -83,9 +83,18 @@ public:
 
     // Floor all regrets at zero (CFR+)
     void batch_floor_regrets() {
+        for (auto& grp : groups_)
+            for (auto& rv : grp.regrets)
+                simd::batch_floor_zero(rv.data(), rv.size());
+    }
+
+    // DCFR: multiply positive regrets by factor, floor negative regrets to 0.
+    // factor = t^alpha / (t^alpha + 1)  with alpha=1.5
+    void batch_discount_regrets(double factor) {
         for (auto& grp : groups_) {
             for (auto& rv : grp.regrets) {
-                simd::batch_floor_zero(rv.data(), rv.size());
+                for (double& r : rv)
+                    r = (r > 0.0) ? r * factor : 0.0;
             }
         }
     }

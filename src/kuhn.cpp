@@ -3,6 +3,8 @@
 #include <iomanip>
 #include <cassert>
 #include <cmath>
+#include <vector>
+#include <unordered_map>
 
 namespace cfr {
 namespace kuhn {
@@ -10,7 +12,6 @@ namespace kuhn {
 // ---- game logic helpers ----
 
 static bool is_terminal(const std::string& h) {
-    // terminal histories: pp, bb, bp, pbb, pbp
     int n = h.size();
     if (n < 2) return false;
     if (n == 2) return (h == "pp" || h == "bb" || h == "bp");
@@ -19,7 +20,6 @@ static bool is_terminal(const std::string& h) {
 }
 
 static int acting_player(const std::string& h) {
-    // P0 at history lengths 0,2  P1 at length 1
     return h.size() % 2 == 0 ? 0 : 1;
 }
 
@@ -27,10 +27,10 @@ static int acting_player(const std::string& h) {
 static double payoff(int p0_card, int p1_card, const std::string& h) {
     bool p0_higher = p0_card > p1_card;
     if (h == "pp")  return p0_higher ?  1.0 : -1.0;
-    if (h == "bp")  return  1.0;                     // P0 bet, P1 fold
-    if (h == "bb")  return p0_higher ?  2.0 : -2.0;  // P0 bet, P1 call
-    if (h == "pbp") return -1.0;                      // P0 check, P1 bet, P0 fold
-    if (h == "pbb") return p0_higher ?  2.0 : -2.0;  // P0 check, P1 bet, P0 call
+    if (h == "bp")  return  1.0;
+    if (h == "bb")  return p0_higher ?  2.0 : -2.0;
+    if (h == "pbp") return -1.0;
+    if (h == "pbb") return p0_higher ?  2.0 : -2.0;
     assert(false);
     return 0.0;
 }
@@ -48,7 +48,6 @@ double cfr_traverse(InfoMap& nodes, int p0_card, int p1_card,
     int player = acting_player(history);
     int card = (player == 0) ? p0_card : p1_card;
 
-    // build info set key  e.g. "K:pb"
     char buf[8];
     buf[0] = card_name(card);
     buf[1] = ':';
@@ -68,7 +67,7 @@ double cfr_traverse(InfoMap& nodes, int p0_card, int p1_card,
 
     double util[NUM_ACTIONS];
     double node_util = 0.0;
-    char action_char[2] = {'p', 'b'};
+    const char action_char[2] = {'p', 'b'};
 
     for (int a = 0; a < NUM_ACTIONS; a++) {
         std::string next = history + action_char[a];
@@ -80,23 +79,20 @@ double cfr_traverse(InfoMap& nodes, int p0_card, int p1_card,
         node_util += strategy[a] * util[a];
     }
 
-    // update regrets and strategy sums
-    double cf_reach  = (player == 0) ? p1_reach : p0_reach;
-    double my_reach  = (player == 0) ? p0_reach : p1_reach;
-    double sign      = (player == 0) ? 1.0 : -1.0;
+    double cf_reach = (player == 0) ? p1_reach : p0_reach;
+    double my_reach = (player == 0) ? p0_reach : p1_reach;
+    double sign     = (player == 0) ? 1.0 : -1.0;
 
     for (int a = 0; a < NUM_ACTIONS; a++) {
-        double regret = sign * (util[a] - node_util);
-        node.regret_sum[a] += cf_reach * regret;
+        node.regret_sum[a] += cf_reach * sign * (util[a] - node_util);
     }
 
-    // CFR+: floor regrets
-    if (mode == Mode::CFR_PLUS) {
-        node.floor_regrets();
-    }
+    // strategy-sum weighting: 1 (CFR), t (CFR+), t^2 (DCFR)
+    double weight;
+    if      (mode == Mode::CFR_PLUS) weight = (double)iteration;
+    else if (mode == Mode::DCFR)     weight = (double)iteration * (double)iteration;
+    else                             weight = 1.0;
 
-    // strategy sum (linear weighting for CFR+)
-    double weight = (mode == Mode::CFR_PLUS) ? (double)iteration : 1.0;
     for (int a = 0; a < NUM_ACTIONS; a++) {
         node.strategy_sum[a] += weight * my_reach * strategy[a];
     }
@@ -104,61 +100,105 @@ double cfr_traverse(InfoMap& nodes, int p0_card, int p1_card,
     return node_util;
 }
 
-// ---- best response ----
+// ---- correct best-response (infoset-level) ----
+//
+// The old per-deal traversal let the BR player pick DIFFERENT actions at the
+// same infoset for different deals, overestimating exploitability.
+//
+// The fix: process ALL deals simultaneously. At BR-player nodes, group by the
+// player's private card (which defines the infoset for a given history), then
+// pick a SINGLE best action for the whole group. This enforces strategy
+// consistency across deals that share an infoset.
 
-// returns expected utility from br_player's perspective
-// br_player plays optimally, opponent follows avg strategy
-static double best_response(const InfoMap& nodes, int p0_card, int p1_card,
-                            const std::string& history, int br_player) {
+struct DealState {
+    int  p0_card, p1_card;
+    double opp_reach;   // opponent's reach probability to current node
+};
+
+static double br_traverse(
+        const std::vector<DealState>& states,
+        const std::string& history,
+        int br_player,
+        const InfoMap& nodes) {
+
+    if (states.empty()) return 0.0;
+
     if (is_terminal(history)) {
-        double u = payoff(p0_card, p1_card, history);
-        return (br_player == 0) ? u : -u;
+        double total = 0.0;
+        for (const auto& s : states) {
+            double u = payoff(s.p0_card, s.p1_card, history);
+            if (br_player == 1) u = -u;
+            total += s.opp_reach * u;
+        }
+        return total;
     }
 
     int player = acting_player(history);
-    int card = (player == 0) ? p0_card : p1_card;
-
-    char buf[8];
-    buf[0] = card_name(card); buf[1] = ':';
-    int len = 2;
-    for (char c : history) buf[len++] = c;
-    std::string key(buf, len);
-
-    char ac[2] = {'p', 'b'};
+    const char ac[] = {'p', 'b'};
 
     if (player == br_player) {
-        // pick best action
-        double best = -1e18;
-        for (int a = 0; a < NUM_ACTIONS; a++) {
-            double v = best_response(nodes, p0_card, p1_card, history + ac[a], br_player);
-            if (v > best) best = v;
+        // Group by the BR player's private card — each group is one infoset.
+        // Within a group, pick ONE best action (the max over the summed value).
+        std::unordered_map<int, std::vector<DealState>> by_card;
+        for (const auto& s : states) {
+            int card = (br_player == 0) ? s.p0_card : s.p1_card;
+            by_card[card].push_back(s);
         }
-        return best;
+
+        double total = 0.0;
+        for (auto& [card, group] : by_card) {
+            double best = -1e18;
+            for (int a = 0; a < NUM_ACTIONS; a++) {
+                double v = br_traverse(group, history + ac[a], br_player, nodes);
+                if (v > best) best = v;
+            }
+            total += best;
+        }
+        return total;
+
     } else {
-        // follow average strategy
-        double strat[NUM_ACTIONS];
-        auto it = nodes.find(key);
-        if (it != nodes.end()) {
-            it->second.get_average_strategy(strat);
-        } else {
-            for (int a = 0; a < NUM_ACTIONS; a++) strat[a] = 1.0 / NUM_ACTIONS;
+        // Opponent follows average strategy.
+        // Each deal may have a different infoset (different private card) and
+        // therefore a different mixed strategy — handle per-state.
+        std::vector<DealState> child[NUM_ACTIONS];
+        for (const auto& s : states) {
+            int card = (player == 0) ? s.p0_card : s.p1_card;
+            char buf[8];
+            buf[0] = card_name(card); buf[1] = ':';
+            int len = 2;
+            for (char c : history) buf[len++] = c;
+            std::string key(buf, len);
+
+            double strat[2] = {0.5, 0.5};
+            auto it = nodes.find(key);
+            if (it != nodes.end()) it->second.get_average_strategy(strat);
+
+            for (int a = 0; a < NUM_ACTIONS; a++) {
+                if (strat[a] > 1e-10)
+                    child[a].push_back({s.p0_card, s.p1_card, s.opp_reach * strat[a]});
+            }
         }
-        double ev = 0.0;
-        for (int a = 0; a < NUM_ACTIONS; a++) {
-            ev += strat[a] * best_response(nodes, p0_card, p1_card, history + ac[a], br_player);
-        }
-        return ev;
+
+        double total = 0.0;
+        for (int a = 0; a < NUM_ACTIONS; a++)
+            total += br_traverse(child[a], history + ac[a], br_player, nodes);
+        return total;
     }
 }
 
 double exploitability(const InfoMap& nodes) {
     constexpr int deals[][2] = {{0,1},{0,2},{1,0},{1,2},{2,0},{2,1}};
-    double br0 = 0.0, br1 = 0.0;
-    for (auto& d : deals) {
-        br0 += best_response(nodes, d[0], d[1], "", 0);
-        br1 += best_response(nodes, d[0], d[1], "", 1);
-    }
-    return (br0 + br1) / 12.0;  // /6 for deals, /2 for avg over players
+
+    std::vector<DealState> all;
+    all.reserve(6);
+    for (const auto& d : deals)
+        all.push_back({d[0], d[1], 1.0});
+
+    // br_traverse returns sum_{deals} opp_reach*value;
+    // divide by 6 (equal deal probability) and by 2 (average over players)
+    double br0 = br_traverse(all, "", 0, nodes);
+    double br1 = br_traverse(all, "", 1, nodes);
+    return (br0 + br1) / 12.0;
 }
 
 // ---- training loop ----
@@ -169,13 +209,30 @@ std::vector<std::pair<int,double>> train(InfoMap& nodes, int iterations,
     std::vector<std::pair<int,double>> curve;
 
     for (int t = 1; t <= iterations; t++) {
-        for (auto& d : deals) {
+
+        // DCFR: discount positive regrets before this iteration's traversal.
+        // alpha=1.5 (aggressive discount), negative regrets floored to 0.
+        if (mode == Mode::DCFR) {
+            double alpha  = 1.5;
+            double pt     = std::pow((double)t, alpha);
+            double factor = pt / (pt + 1.0);
+            for (auto& [key, node] : nodes) {
+                for (int a = 0; a < node.num_actions; a++)
+                    node.regret_sum[a] = std::max(node.regret_sum[a], 0.0) * factor;
+            }
+        }
+
+        for (const auto& d : deals)
             cfr_traverse(nodes, d[0], d[1], "", 1.0, 1.0, mode, t);
+
+        // CFR+ / DCFR: floor regrets AFTER all deals complete (not mid-iteration).
+        if (mode == Mode::CFR_PLUS || mode == Mode::DCFR) {
+            for (auto& [key, node] : nodes)
+                node.floor_regrets();
         }
-        if (t == 1 || t % eval_every == 0 || t == iterations) {
-            double expl = exploitability(nodes);
-            curve.push_back({t, expl});
-        }
+
+        if (t == 1 || t % eval_every == 0 || t == iterations)
+            curve.push_back({t, exploitability(nodes)});
     }
     return curve;
 }
@@ -186,11 +243,10 @@ void print_strategy(const InfoMap& nodes) {
     std::cout << std::fixed << std::setprecision(4);
     std::cout << "Kuhn Poker Average Strategy:\n";
     std::cout << "InfoSet     Pass    Bet\n";
-    // collect and sort keys
     std::vector<std::string> keys;
-    for (auto& kv : nodes) keys.push_back(kv.first);
+    for (const auto& kv : nodes) keys.push_back(kv.first);
     std::sort(keys.begin(), keys.end());
-    for (auto& k : keys) {
+    for (const auto& k : keys) {
         double s[NUM_ACTIONS];
         nodes.at(k).get_average_strategy(s);
         std::cout << std::setw(10) << std::left << k

@@ -4,6 +4,9 @@
 #include <cassert>
 #include <iostream>
 #include <iomanip>
+#include <cmath>
+#include <unordered_map>
+#include <vector>
 
 namespace cfr {
 namespace abstraction {
@@ -14,39 +17,27 @@ int bucket_id(int priv_rank, int board_rank, BucketScheme scheme) {
     switch (scheme) {
     case BucketScheme::NONE:
     case BucketScheme::RANK_ONLY:
-        // preflop: just the private rank (0,1,2)
         if (board_rank < 0) return priv_rank;
-        // postflop: (private_rank * 3 + board_rank)
         return priv_rank * 3 + board_rank;
 
     case BucketScheme::STRENGTH:
-        if (board_rank < 0) {
-            // preflop: all cards are "equal" in strength bucket
-            // or we can rank them: 0=J(low), 1=Q(mid), 2=K(high)
-            return priv_rank; // 3 preflop buckets
-        }
-        // postflop: pair=0, high(priv>board)=1, low(priv<=board)=2
+        if (board_rank < 0) return priv_rank;
         if (priv_rank == board_rank) return 0; // pair
-        if (priv_rank > board_rank) return 1;  // high card
+        if (priv_rank > board_rank)  return 1; // high card
         return 2;                               // low card
     }
     return 0;
 }
 
 int num_buckets_preflop(BucketScheme scheme) {
-    switch (scheme) {
-    case BucketScheme::NONE:
-    case BucketScheme::RANK_ONLY: return 3;
-    case BucketScheme::STRENGTH:  return 3;
-    }
-    return 3;
+    (void)scheme; return 3;
 }
 
 int num_buckets_postflop(BucketScheme scheme) {
     switch (scheme) {
     case BucketScheme::NONE:
-    case BucketScheme::RANK_ONLY: return 9; // 3*3
-    case BucketScheme::STRENGTH:  return 3; // pair/high/low
+    case BucketScheme::RANK_ONLY: return 9;
+    case BucketScheme::STRENGTH:  return 3;
     }
     return 9;
 }
@@ -54,12 +45,10 @@ int num_buckets_postflop(BucketScheme scheme) {
 std::string abstract_info_key(int private_card, int board_card,
                                int round, const std::string& history,
                                BucketScheme scheme) {
-    int priv_rank = leduc::card_rank(private_card);
+    int priv_rank  = leduc::card_rank(private_card);
     int board_rank = (round >= 1) ? leduc::card_rank(board_card) : -1;
     int bid = bucket_id(priv_rank, board_rank, scheme);
-
-    std::string key = "B" + std::to_string(bid) + ":" + history;
-    return key;
+    return "B" + std::to_string(bid) + ":" + history;
 }
 
 // ---- Action abstraction ----
@@ -68,10 +57,8 @@ void get_abstracted_actions(int num_bets, const std::string& round_hist,
                             ActionScheme scheme,
                             int* actions, int& n_actions) {
     n_actions = 0;
-
     bool facing_bet = false;
     if (!round_hist.empty()) {
-        // check if there's an unmatched bet
         int bets = 0, calls = 0;
         for (char c : round_hist) {
             if (c == 'b') bets++;
@@ -81,21 +68,18 @@ void get_abstracted_actions(int num_bets, const std::string& round_hist,
     }
 
     if (!facing_bet) {
-        // no bet: check or bet
         actions[n_actions++] = leduc::CHECK_CALL;
         if (scheme == ActionScheme::FULL || num_bets < 1)
             actions[n_actions++] = leduc::BET_RAISE;
     } else {
-        // facing bet: fold, call, or raise
         actions[n_actions++] = leduc::FOLD;
         actions[n_actions++] = leduc::CHECK_CALL;
         if (scheme == ActionScheme::FULL && num_bets < leduc::MAX_RAISES)
             actions[n_actions++] = leduc::BET_RAISE;
-        // NO_RAISE: no raise option
     }
 }
 
-// ---- abstracted CFR traversal for Leduc ----
+// ---- Shared game-tree helpers (mirrors leduc.cpp internals) ----
 
 static int acting_player_round(const std::string& round_hist) {
     return round_hist.size() % 2 == 0 ? 0 : 1;
@@ -106,8 +90,7 @@ static bool round_over(const std::string& rh, bool& folded) {
     int n = rh.size();
     if (n < 2) return false;
     if (rh.back() == 'f') { folded = true; return true; }
-    if (n >= 2 && rh[n-1] == 'c' && (rh[n-2] == 'c' || rh[n-2] == 'b'))
-        return true;
+    if (n >= 2 && rh[n-1] == 'c' && (rh[n-2] == 'c' || rh[n-2] == 'b')) return true;
     return false;
 }
 
@@ -123,14 +106,16 @@ static int showdown_winner(const int cards[3]) {
     return 0;
 }
 
+// ---- Abstracted CFR traversal ----
+
 static double abstract_cfr(InfoMap& nodes,
-                           const int cards[3],
-                           int round,
-                           const std::string& history,
-                           int num_bets, int chips[2],
-                           double r0, double r1,
-                           const AbstractConfig& cfg,
-                           int iteration) {
+                            const int cards[3],
+                            int round,
+                            const std::string& history,
+                            int num_bets, int chips[2],
+                            double r0, double r1,
+                            const AbstractConfig& cfg,
+                            int iteration) {
     auto slash = history.rfind('/');
     std::string rh = (slash == std::string::npos) ? history : history.substr(slash + 1);
 
@@ -142,18 +127,16 @@ static double abstract_cfr(InfoMap& nodes,
         }
         if (round == 0) {
             int nc[2] = {chips[0], chips[1]};
-            return abstract_cfr(nodes, cards, 1, history + "/", 0, nc,
-                                r0, r1, cfg, iteration);
+            return abstract_cfr(nodes, cards, 1, history + "/", 0, nc, r0, r1, cfg, iteration);
         }
         int w = showdown_winner(cards);
-        if (w > 0) return (double)chips[1];
+        if (w > 0) return  (double)chips[1];
         if (w < 0) return -(double)chips[0];
         return 0.0;
     }
 
     int player = acting_player_round(rh);
-    std::string key = abstract_info_key(cards[player], cards[2], round, history,
-                                         cfg.buckets);
+    std::string key = abstract_info_key(cards[player], cards[2], round, history, cfg.buckets);
 
     int avail[3]; int na;
     get_abstracted_actions(num_bets, rh, cfg.actions, avail, na);
@@ -173,7 +156,7 @@ static double abstract_cfr(InfoMap& nodes,
         int nb = num_bets;
         int nc[2] = {chips[0], chips[1]};
 
-        if (a == leduc::FOLD) ac = 'f';
+        if (a == leduc::FOLD)       ac = 'f';
         else if (a == leduc::CHECK_CALL) {
             ac = 'c';
             if (num_bets > 0) nc[player] = nc[1-player];
@@ -184,26 +167,174 @@ static double abstract_cfr(InfoMap& nodes,
 
         double nr0 = r0, nr1 = r1;
         if (player == 0) nr0 *= strat[i]; else nr1 *= strat[i];
-
-        util[i] = abstract_cfr(nodes, cards, round, history + ac,
-                                nb, nc, nr0, nr1, cfg, iteration);
+        util[i] = abstract_cfr(nodes, cards, round, history + ac, nb, nc, nr0, nr1, cfg, iteration);
         nutil += strat[i] * util[i];
     }
 
-    double cf = (player == 0) ? r1 : r0;
-    double my = (player == 0) ? r0 : r1;
+    double cf   = (player == 0) ? r1 : r0;
+    double my   = (player == 0) ? r0 : r1;
     double sign = (player == 0) ? 1.0 : -1.0;
 
     for (int i = 0; i < na; i++)
         node.regret_sum[i] += cf * sign * (util[i] - nutil);
 
-    if (cfg.cfr_mode == Mode::CFR_PLUS) node.floor_regrets();
+    double weight;
+    if      (cfg.cfr_mode == Mode::CFR_PLUS) weight = (double)iteration;
+    else if (cfg.cfr_mode == Mode::DCFR)     weight = (double)iteration * (double)iteration;
+    else                                      weight = 1.0;
 
-    double w = (cfg.cfr_mode == Mode::CFR_PLUS) ? (double)iteration : 1.0;
     for (int i = 0; i < na; i++)
-        node.strategy_sum[i] += w * my * strat[i];
+        node.strategy_sum[i] += weight * my * strat[i];
 
     return nutil;
+}
+
+// ---- Correct infoset-level BR for the abstract game ----
+//
+// The BR player groups deals by their ABSTRACT infoset (bucket + history).
+// This correctly enforces that the BR player can only distinguish deals up to
+// the same resolution as the abstract strategy.
+
+struct AbsDealState {
+    int p0_card, p1_card, board;
+    double opp_reach;
+};
+
+static void apply_abs_action(int player, int num_bets, int round,
+                             int a_idx, const int avail[],
+                             const int chips_in[2],
+                             char& act_char, int& nb, int nc[2]) {
+    nb = num_bets;
+    nc[0] = chips_in[0]; nc[1] = chips_in[1];
+    int a = avail[a_idx];
+    if (a == leduc::FOLD)            { act_char = 'f'; }
+    else if (a == leduc::CHECK_CALL) {
+        act_char = 'c';
+        if (num_bets > 0) nc[player] = nc[1-player];
+    } else {
+        act_char = 'b'; nb++;
+        nc[player] = nc[1-player] + leduc::BET_SIZE[round];
+    }
+}
+
+static double abstract_br_traverse(
+        const std::vector<AbsDealState>& states,
+        int round,
+        const std::string& history,
+        int num_bets,
+        int chips_in[2],
+        int br_player,
+        const InfoMap& abstract_nodes,
+        const AbstractConfig& cfg) {
+
+    if (states.empty()) return 0.0;
+
+    auto slash = history.rfind('/');
+    std::string rh = (slash == std::string::npos) ? history : history.substr(slash + 1);
+
+    bool folded = false;
+    if (round_over(rh, folded)) {
+        if (folded) {
+            int fp = acting_player_round(std::string(rh.begin(), rh.end()-1));
+            double u_raw = (fp == 0) ? -(double)chips_in[0] : (double)chips_in[1];
+            double total = 0.0;
+            for (const auto& s : states)
+                total += s.opp_reach * ((br_player == 0) ? u_raw : -u_raw);
+            return total;
+        }
+        if (round == 0) {
+            int nc[2] = {chips_in[0], chips_in[1]};
+            return abstract_br_traverse(states, 1, history + "/", 0, nc,
+                                         br_player, abstract_nodes, cfg);
+        }
+        double total = 0.0;
+        for (const auto& s : states) {
+            const int cards[3] = {s.p0_card, s.p1_card, s.board};
+            int w = showdown_winner(cards);
+            double u;
+            if (w > 0)      u =  (double)chips_in[1];
+            else if (w < 0) u = -(double)chips_in[0];
+            else            u = 0.0;
+            if (br_player == 1) u = -u;
+            total += s.opp_reach * u;
+        }
+        return total;
+    }
+
+    int player = acting_player_round(rh);
+    int avail[3]; int na;
+    get_abstracted_actions(num_bets, rh, cfg.actions, avail, na);
+
+    if (player == br_player) {
+        // Group by ABSTRACT infoset key so the BR player can only condition
+        // on the same information as the abstract strategy.
+        std::unordered_map<std::string, std::vector<AbsDealState>> by_bucket;
+        for (const auto& s : states) {
+            int pcard = (player == 0) ? s.p0_card : s.p1_card;
+            by_bucket[abstract_info_key(pcard, s.board, round, history, cfg.buckets)].push_back(s);
+        }
+
+        double total = 0.0;
+        for (auto& [key, group] : by_bucket) {
+            double best = -1e18;
+            for (int i = 0; i < na; i++) {
+                char ac; int nb; int nc[2];
+                apply_abs_action(player, num_bets, round, i, avail,
+                                  chips_in, ac, nb, nc);
+                double v = abstract_br_traverse(group, round, history + ac,
+                                                 nb, nc, br_player, abstract_nodes, cfg);
+                if (v > best) best = v;
+            }
+            total += best;
+        }
+        return total;
+
+    } else {
+        // Opponent follows abstract average strategy.
+        std::vector<AbsDealState> child_states[3];
+
+        for (const auto& s : states) {
+            int pcard = (player == 0) ? s.p0_card : s.p1_card;
+            std::string key = abstract_info_key(pcard, s.board, round, history, cfg.buckets);
+
+            double strat[4];
+            auto it = abstract_nodes.find(key);
+            if (it != abstract_nodes.end()) it->second.get_average_strategy(strat);
+            else for (int i = 0; i < na; i++) strat[i] = 1.0 / na;
+
+            for (int i = 0; i < na; i++)
+                if (strat[i] > 1e-10)
+                    child_states[i].push_back({s.p0_card, s.p1_card, s.board,
+                                               s.opp_reach * strat[i]});
+        }
+
+        double total = 0.0;
+        for (int i = 0; i < na; i++) {
+            if (child_states[i].empty()) continue;
+            char ac; int nb; int nc[2];
+            apply_abs_action(player, num_bets, round, i, avail,
+                              chips_in, ac, nb, nc);
+            total += abstract_br_traverse(child_states[i], round, history + ac,
+                                           nb, nc, br_player, abstract_nodes, cfg);
+        }
+        return total;
+    }
+}
+
+// Exploitability within the abstract game (uses abstract infoset keys for
+// both training and BR evaluation — correctly measures convergence).
+static double abstract_exploitability(const InfoMap& abstract_nodes,
+                                       const AbstractConfig& cfg) {
+    auto deals = leduc::all_deals();
+    std::vector<AbsDealState> all;
+    all.reserve(deals.size());
+    for (const auto& d : deals)
+        all.push_back({d.cards[0], d.cards[1], d.cards[2], d.prob});
+
+    int chips[2] = {1, 1};
+    double br0 = abstract_br_traverse(all, 0, "", 0, chips, 0, abstract_nodes, cfg);
+    double br1 = abstract_br_traverse(all, 0, "", 0, chips, 1, abstract_nodes, cfg);
+    return (br0 + br1) / 2.0;
 }
 
 // ---- experiment runner ----
@@ -214,27 +345,42 @@ AbstractResult run_abstraction_experiment(const AbstractConfig& config) {
     AbstractResult result;
 
     for (int t = 1; t <= config.iterations; t++) {
-        for (auto& deal : deals) {
+        // DCFR discount
+        if (config.cfr_mode == Mode::DCFR) {
+            double alpha  = 1.5;
+            double pt     = std::pow((double)t, alpha);
+            double factor = pt / (pt + 1.0);
+            for (auto& [key, node] : abstract_nodes)
+                for (int a = 0; a < node.num_actions; a++)
+                    node.regret_sum[a] = std::max(node.regret_sum[a], 0.0) * factor;
+        }
+
+        for (const auto& deal : deals) {
             int chips[2] = {1, 1};
             abstract_cfr(abstract_nodes, deal.cards, 0, "", 0, chips,
                          deal.prob, deal.prob, config, t);
         }
 
+        // CFR+ / DCFR: floor regrets after all deals
+        if (config.cfr_mode == Mode::CFR_PLUS || config.cfr_mode == Mode::DCFR) {
+            for (auto& [key, node] : abstract_nodes)
+                node.floor_regrets();
+        }
+
         if (t == 1 || t % config.eval_every == 0 || t == config.iterations) {
-            // measure exploitability of the abstracted strategy
-            // mapped back to the full game via the bucketing
-            // (for simplicity, we measure within the abstract game)
-            double expl = leduc::exploitability(abstract_nodes);
+            // Evaluate exploitability within the abstract game (correct measurement).
+            double expl = abstract_exploitability(abstract_nodes, config);
             result.exploit_curve.push_back({t, expl});
         }
     }
 
     result.num_abstract_infosets = abstract_nodes.size();
-    result.final_exploit = result.exploit_curve.empty() ? 0.0 : result.exploit_curve.back().second;
+    result.final_exploit = result.exploit_curve.empty()
+                         ? 0.0 : result.exploit_curve.back().second;
 
-    // also train full game for comparison baseline
+    // Count full-game infosets for comparison
     InfoMap full_nodes;
-    leduc::train(full_nodes, config.iterations, config.cfr_mode, config.eval_every);
+    leduc::train(full_nodes, 1, Mode::CFR, 1);  // 1 iter just to populate node keys
     result.num_original_infosets = full_nodes.size();
 
     return result;
