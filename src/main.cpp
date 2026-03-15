@@ -7,6 +7,7 @@
 #include <string>
 #include <cstring>
 #include <iomanip>
+#include <filesystem>
 
 using namespace cfr;
 
@@ -216,6 +217,8 @@ static void run_abstraction_experiments() {
 int main(int argc, char** argv) {
     std::cout << "cfr-edge: Poker CFR/CFR+ Solver\n";
     std::cout << "================================\n";
+
+    std::filesystem::create_directories("results");
 
     bool do_kuhn = true, do_leduc = true, do_abstract = true;
 

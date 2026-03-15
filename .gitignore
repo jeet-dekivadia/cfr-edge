@@ -4,6 +4,7 @@ build/
 *.out
 .vscode/
 .idea/
+.cache/
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
