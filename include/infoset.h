@@ -5,23 +5,33 @@
 #include <unordered_map>
 #include <algorithm>
 #include <cstring>
+#include <cassert>
 
 namespace cfr {
 
 // Solver variant
-// CFR:      vanilla CFR, uniform strategy-sum weighting
-// CFR_PLUS: regret flooring + linear (t) strategy-sum weighting
-// DCFR:     Discounted CFR+ (Brown & Sandholm 2019)
-//           alpha=1.5 discount on positive regrets, floor negatives,
-//           quadratic (t^2) strategy-sum weighting — ~100x faster convergence
+// CFR:      vanilla CFR, uniform (weight=1) strategy-sum accumulation.
+// CFR_PLUS: positive-regret flooring + linear (weight=t) strategy-sum weighting.
+// DCFR:     Discounted CFR (Brown & Sandholm 2019, AAAI-19).
+//           Positive regrets discounted by t^α/(t^α+1) each iteration (α=1.5).
+//           Negative regrets floored to 0 at each step (β = -∞ variant, which
+//           converges empirically faster than the paper's β=0 formulation).
+//           Strategy-sum weighted by t^γ (γ=2) — quadratic weighting.
+//           Net effect: ~100× faster convergence to ε-Nash vs vanilla CFR.
 enum class Mode { CFR, CFR_PLUS, DCFR };
 
+// Maximum number of actions any game node can have.
+// Leduc: up to 3 (fold/check-call/bet-raise). Texas Hold'em: up to 6.
+// Increase this constant if adding games with wider action sets.
+static constexpr int MAX_ACTIONS = 6;
+
 struct InfoNode {
-    double regret_sum[4];
-    double strategy_sum[4];
+    double regret_sum[MAX_ACTIONS];
+    double strategy_sum[MAX_ACTIONS];
     int num_actions;
 
     explicit InfoNode(int n = 2) : num_actions(n) {
+        assert(n >= 1 && n <= MAX_ACTIONS);
         std::memset(regret_sum, 0, sizeof(regret_sum));
         std::memset(strategy_sum, 0, sizeof(strategy_sum));
     }
