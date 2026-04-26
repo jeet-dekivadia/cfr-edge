@@ -27,13 +27,15 @@ public:
         grp.count++;
         grp.keys.push_back(key);
 
-        // extend each action's arrays
-        for (int a = 0; a <= g; a++) {
-            if ((int)grp.regrets.size() <= a) {
-                grp.regrets.resize(a + 1);
-                grp.strat_sums.resize(a + 1);
-                grp.strategy.resize(a + 1);
-            }
+        // Ensure action arrays are allocated for this group (num_actions = g+1).
+        // This only resizes the outer vector once; subsequent insertions just push_back.
+        const int na = g + 1;
+        if ((int)grp.regrets.size() < na) {
+            grp.regrets.resize(na);
+            grp.strat_sums.resize(na);
+            grp.strategy.resize(na);
+        }
+        for (int a = 0; a < na; a++) {
             grp.regrets[a].push_back(0.0);
             grp.strat_sums[a].push_back(0.0);
             grp.strategy[a].push_back(0.0);
@@ -90,13 +92,11 @@ public:
 
     // DCFR: multiply positive regrets by factor, floor negative regrets to 0.
     // factor = t^alpha / (t^alpha + 1)  with alpha=1.5
+    // Uses SIMD (AVX2 or SSE2) for throughput.
     void batch_discount_regrets(double factor) {
-        for (auto& grp : groups_) {
-            for (auto& rv : grp.regrets) {
-                for (double& r : rv)
-                    r = (r > 0.0) ? r * factor : 0.0;
-            }
-        }
+        for (auto& grp : groups_)
+            for (auto& rv : grp.regrets)
+                simd::batch_discount_regrets(rv.data(), factor, rv.size());
     }
 
     // Access strategy for a specific node
