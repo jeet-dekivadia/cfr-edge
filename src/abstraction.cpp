@@ -1,5 +1,6 @@
 #include "abstraction.h"
 #include "leduc.h"
+#include "leduc_utils.h"
 #include <algorithm>
 #include <cassert>
 #include <iostream>
@@ -46,6 +47,7 @@ std::string abstract_info_key(int private_card, int board_card,
                                int round, const std::string& history,
                                BucketScheme scheme) {
     int priv_rank  = leduc::card_rank(private_card);
+    // board_rank is -1 pre-flop (round 0) so bucket_id uses preflop path
     int board_rank = (round >= 1) ? leduc::card_rank(board_card) : -1;
     int bid = bucket_id(priv_rank, board_rank, scheme);
     return "B" + std::to_string(bid) + ":" + history;
@@ -56,54 +58,48 @@ std::string abstract_info_key(int private_card, int board_card,
 void get_abstracted_actions(int num_bets, const std::string& round_hist,
                             ActionScheme scheme,
                             int* actions, int& n_actions) {
+    // Determine max raises based on abstraction:
+    //   FULL     -> respect the full game's MAX_RAISES cap
+    //   NO_RAISE -> cap at 1 (only the first bet; no raise allowed)
+    const int max_r = (scheme == ActionScheme::NO_RAISE) ? 1 : leduc::MAX_RAISES;
+
+    // Reuse the shared action-building logic from leduc_utils.h.
+    // We can't call the template directly with a runtime max_r, so inline it.
     n_actions = 0;
     bool facing_bet = false;
     if (!round_hist.empty()) {
         int bets = 0, calls = 0;
         for (char c : round_hist) {
-            if (c == 'b') bets++;
-            if (c == 'c' && bets > calls) calls++;
+            if (c == 'b') { bets++; }
+            if (c == 'c' && bets > calls) { calls++; }
         }
         facing_bet = (bets > calls);
     }
 
     if (!facing_bet) {
         actions[n_actions++] = leduc::CHECK_CALL;
-        if (scheme == ActionScheme::FULL || num_bets < 1)
+        if (num_bets < max_r)
             actions[n_actions++] = leduc::BET_RAISE;
     } else {
         actions[n_actions++] = leduc::FOLD;
         actions[n_actions++] = leduc::CHECK_CALL;
-        if (scheme == ActionScheme::FULL && num_bets < leduc::MAX_RAISES)
+        if (num_bets < max_r)
             actions[n_actions++] = leduc::BET_RAISE;
     }
 }
 
-// ---- Shared game-tree helpers (mirrors leduc.cpp internals) ----
+// ---- Shared game-tree helpers (from leduc_utils.h) ----
 
-static int acting_player_round(const std::string& round_hist) {
-    return round_hist.size() % 2 == 0 ? 0 : 1;
+static inline int acting_player_round(const std::string& round_hist) {
+    return leduc::acting_player_in_round(round_hist);
 }
 
-static bool round_over(const std::string& rh, bool& folded) {
-    folded = false;
-    int n = rh.size();
-    if (n < 2) return false;
-    if (rh.back() == 'f') { folded = true; return true; }
-    if (n >= 2 && rh[n-1] == 'c' && (rh[n-2] == 'c' || rh[n-2] == 'b')) return true;
-    return false;
+static inline bool round_over(const std::string& rh, bool& folded) {
+    return leduc::round_over(rh, folded);
 }
 
-static int showdown_winner(const int cards[3]) {
-    int r0 = leduc::card_rank(cards[0]);
-    int r1 = leduc::card_rank(cards[1]);
-    int board = leduc::card_rank(cards[2]);
-    bool pair0 = (r0 == board), pair1 = (r1 == board);
-    if (pair0 && !pair1) return 1;
-    if (!pair0 && pair1) return -1;
-    if (r0 > r1) return 1;
-    if (r0 < r1) return -1;
-    return 0;
+static inline int showdown_winner(const int cards[3]) {
+    return leduc::showdown_winner(cards);
 }
 
 // ---- Abstracted CFR traversal ----

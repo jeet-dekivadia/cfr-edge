@@ -1,4 +1,5 @@
 #include "leduc.h"
+#include "leduc_utils.h"
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
@@ -25,30 +26,23 @@ std::vector<Deal> all_deals() {
     return deals;
 }
 
-// ---- game helpers ----
+// ---- game helpers (implementations delegated to leduc_utils.h) ----
 
-static int acting_player(const std::string& round_hist) {
-    return round_hist.size() % 2 == 0 ? 0 : 1;
+// Thin wrappers to preserve local call-site names.
+static inline int acting_player(const std::string& round_hist) {
+    return leduc::acting_player_in_round(round_hist);
 }
 
-static int showdown_winner(const int cards[3]) {
-    int r0 = card_rank(cards[0]);
-    int r1 = card_rank(cards[1]);
-    int board = card_rank(cards[2]);
-    bool pair0 = (r0 == board), pair1 = (r1 == board);
-    if (pair0 && !pair1) return +1;
-    if (!pair0 && pair1) return -1;
-    if (r0 > r1) return +1;
-    if (r0 < r1) return -1;
-    return 0;
+static inline int showdown_winner(const int cards[3]) {
+    return leduc::showdown_winner(cards);
 }
 
 static std::string make_info_key(int player_card, int board_card, int round,
-                                  const std::string& full_hist) {
+                                   const std::string& full_hist) {
     std::string key;
-    key += rank_name(card_rank(player_card));
+    key += leduc::rank_char(leduc::card_rank(player_card));
     key += ':';
-    if (round >= 1) key += rank_name(card_rank(board_card));
+    if (round >= 1) key += leduc::rank_char(leduc::card_rank(board_card));
     else            key += '?';
     key += ':';
     key += full_hist;
@@ -57,26 +51,12 @@ static std::string make_info_key(int player_card, int board_card, int round,
 
 static void get_actions(int num_bets, const std::string& round_hist,
                         int* actions, int& n_actions) {
-    n_actions = 0;
-    if (round_hist.empty() || (round_hist.size() == 1 && round_hist[0] == 'c')) {
-        actions[n_actions++] = CHECK_CALL;
-        actions[n_actions++] = BET_RAISE;
-    } else {
-        actions[n_actions++] = FOLD;
-        actions[n_actions++] = CHECK_CALL;
-        if (num_bets < MAX_RAISES)
-            actions[n_actions++] = BET_RAISE;
-    }
+    leduc::get_actions_tpl<FOLD, CHECK_CALL, BET_RAISE, MAX_RAISES>(
+        num_bets, round_hist, actions, n_actions);
 }
 
 static bool round_over(const std::string& rh, bool& folded) {
-    folded = false;
-    int n = rh.size();
-    if (n < 2) return false;
-    if (rh.back() == 'f') { folded = true; return true; }
-    if (n >= 2 && rh[n-1] == 'c' && rh[n-2] == 'c') return true;
-    if (n >= 2 && rh[n-1] == 'c' && rh[n-2] == 'b') return true;
-    return false;
+    return leduc::round_over(rh, folded);
 }
 
 // ---- CFR traversal ----
