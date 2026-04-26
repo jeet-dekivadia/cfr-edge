@@ -134,13 +134,22 @@ TrainResult run_training(const TrainConfig& config) {
                     store.batch_floor_regrets();
 
                 if (t == 1 || t % config.eval_every == 0 || t == config.iterations) {
-                    // Build a temporary InfoMap from the SoA store to use the
-                    // infoset-level exploitability evaluator.
+                    // Build a temporary InfoMap from the SoA store so we can
+                    // reuse the infoset-level exploitability evaluator.
+                    //
+                    // Semantic note: store.get_average_strategy() returns a
+                    // NORMALIZED probability vector (sums to 1.0).  We store it
+                    // in nd.strategy_sum; InfoNode::get_average_strategy() will
+                    // normalise by the sum (== 1.0) and return the same values.
+                    // This is intentionally a lightweight snapshot — we never
+                    // accumulate regrets into these tmp nodes.
                     InfoMap tmp;
                     for (const auto& [key, loc] : store.all_keys()) {
                         int g = loc.first, idx = loc.second;
                         int na = store.num_actions(g);
                         InfoNode nd(na);
+                        // Write avg strategy into strategy_sum; re-normalisation
+                        // by get_average_strategy() is a no-op (sum == 1.0).
                         store.get_average_strategy(g, idx, nd.strategy_sum);
                         tmp[key] = nd;
                     }

@@ -1,27 +1,24 @@
 #pragma once
 
-// Unified CFR / CFR+ engine with SoA store backend and optional parallel rollouts.
-// Supports both Kuhn and Leduc via game-tag dispatch.
+// Unified CFR / CFR+ / DCFR engine.
+// Supports Kuhn Poker, Leduc Hold'em, and Texas Hold'em via game-tag dispatch.
 
 #include "infoset.h"
 #include "soa_store.h"
 #include <string>
 #include <vector>
 #include <utility>
-#include <functional>
 
 namespace cfr {
 
-enum class Game { KUHN, LEDUC };
+enum class Game { KUHN, LEDUC, HOLDEM };
 
 struct TrainConfig {
     Game game         = Game::KUHN;
     Mode mode         = Mode::CFR;
     int iterations    = 10000;
     int eval_every    = 100;
-    bool use_soa      = false;   // use SoA store + SIMD batch ops
-    bool parallel     = false;   // parallel deal enumeration (OpenMP)
-    int num_threads   = 4;
+    bool use_soa      = false;   // use SoA store + SIMD batch ops (Kuhn only)
 };
 
 struct TrainResult {
@@ -29,11 +26,17 @@ struct TrainResult {
     double final_exploitability;
     double elapsed_seconds;
     size_t num_infosets;
+    double convergence_rate;  // empirical α in ε ~ C·T^(-α)
 };
 
 // Run training and return results.
-// Uses the InfoMap (AoS) path by default.
-// If config.use_soa is true, uses SoAStore path.
 TrainResult run_training(const TrainConfig& config);
+
+// ---- Shared reporting (best_response.cpp) ----
+void print_exploitability_report(const std::string& game_name,
+                                  const std::string& algo_name,
+                                  const std::vector<std::pair<int,double>>& curve);
+
+double estimate_convergence_rate(const std::vector<std::pair<int,double>>& curve);
 
 } // namespace cfr
