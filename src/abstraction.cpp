@@ -88,19 +88,14 @@ void get_abstracted_actions(int num_bets, const std::string& round_hist,
     }
 }
 
-// ---- Shared game-tree helpers (from leduc_utils.h) ----
+// ---- Shared game-tree helpers — delegated to leduc_utils.h ----
 
-static inline int acting_player_round(const std::string& round_hist) {
-    return leduc::acting_player_in_round(round_hist);
+static inline int acting_player_round(const std::string& rh) {
+    return leduc::acting_player_in_round(rh);
 }
 
-static inline bool round_over(const std::string& rh, bool& folded) {
-    return leduc::round_over(rh, folded);
-}
-
-static inline int showdown_winner(const int cards[3]) {
-    return leduc::showdown_winner(cards);
-}
+// round_over() and showdown_winner() are brought in via leduc_utils.h
+// into namespace cfr::leduc and called below with leduc:: qualification.
 
 // ---- Abstracted CFR traversal ----
 
@@ -116,7 +111,7 @@ static double abstract_cfr(InfoMap& nodes,
     std::string rh = (slash == std::string::npos) ? history : history.substr(slash + 1);
 
     bool folded = false;
-    if (round_over(rh, folded)) {
+    if (leduc::round_over(rh, folded)) {
         if (folded) {
             int fp = acting_player_round(std::string(rh.begin(), rh.end()-1));
             return (fp == 0) ? -(double)chips[0] : (double)chips[1];
@@ -125,7 +120,7 @@ static double abstract_cfr(InfoMap& nodes,
             int nc[2] = {chips[0], chips[1]};
             return abstract_cfr(nodes, cards, 1, history + "/", 0, nc, r0, r1, cfg, iteration);
         }
-        int w = showdown_winner(cards);
+        int w = leduc::showdown_winner(cards);
         if (w > 0) return  (double)chips[1];
         if (w < 0) return -(double)chips[0];
         return 0.0;
@@ -229,7 +224,7 @@ static double abstract_br_traverse(
     std::string rh = (slash == std::string::npos) ? history : history.substr(slash + 1);
 
     bool folded = false;
-    if (round_over(rh, folded)) {
+    if (leduc::round_over(rh, folded)) {
         if (folded) {
             int fp = acting_player_round(std::string(rh.begin(), rh.end()-1));
             double u_raw = (fp == 0) ? -(double)chips_in[0] : (double)chips_in[1];
@@ -246,7 +241,7 @@ static double abstract_br_traverse(
         double total = 0.0;
         for (const auto& s : states) {
             const int cards[3] = {s.p0_card, s.p1_card, s.board};
-            int w = showdown_winner(cards);
+            int w = leduc::showdown_winner(cards);
             double u;
             if (w > 0)      u =  (double)chips_in[1];
             else if (w < 0) u = -(double)chips_in[0];

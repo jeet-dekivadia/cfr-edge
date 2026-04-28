@@ -27,6 +27,7 @@
 #include <array>
 #include <algorithm>
 #include <stdexcept>
+#include <string>
 
 namespace cfr {
 namespace handeval {

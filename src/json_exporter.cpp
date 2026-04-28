@@ -24,6 +24,7 @@
 #include <cstring>
 #include <chrono>
 #include <iomanip>
+#include <set>
 
 using namespace cfr;
 using json = nlohmann::json;

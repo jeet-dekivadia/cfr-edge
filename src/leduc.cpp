@@ -26,23 +26,20 @@ std::vector<Deal> all_deals() {
     return deals;
 }
 
-// ---- game helpers (implementations delegated to leduc_utils.h) ----
+// ---- game helpers ----
+// round_over() and showdown_winner() are provided by leduc_utils.h (same namespace).
+// acting_player() is a thin alias for acting_player_in_round().
 
-// Thin wrappers to preserve local call-site names.
 static inline int acting_player(const std::string& round_hist) {
-    return leduc::acting_player_in_round(round_hist);
-}
-
-static inline int showdown_winner(const int cards[3]) {
-    return leduc::showdown_winner(cards);
+    return acting_player_in_round(round_hist);
 }
 
 static std::string make_info_key(int player_card, int board_card, int round,
                                    const std::string& full_hist) {
     std::string key;
-    key += leduc::rank_char(leduc::card_rank(player_card));
+    key += rank_name(card_rank(player_card));
     key += ':';
-    if (round >= 1) key += leduc::rank_char(leduc::card_rank(board_card));
+    if (round >= 1) key += rank_name(card_rank(board_card));
     else            key += '?';
     key += ':';
     key += full_hist;
@@ -51,12 +48,8 @@ static std::string make_info_key(int player_card, int board_card, int round,
 
 static void get_actions(int num_bets, const std::string& round_hist,
                         int* actions, int& n_actions) {
-    leduc::get_actions_tpl<FOLD, CHECK_CALL, BET_RAISE, MAX_RAISES>(
+    get_actions_tpl<FOLD, CHECK_CALL, BET_RAISE, MAX_RAISES>(
         num_bets, round_hist, actions, n_actions);
-}
-
-static bool round_over(const std::string& rh, bool& folded) {
-    return leduc::round_over(rh, folded);
 }
 
 // ---- CFR traversal ----
@@ -84,7 +77,7 @@ double cfr_traverse(InfoMap& nodes,
             return cfr_traverse(nodes, cards, 1, history + "/", 0, new_chips,
                                 p0_reach, p1_reach, mode, iteration);
         } else {
-            int w = showdown_winner(cards);
+            int w = cfr::leduc::showdown_winner(cards);
             if (w > 0) return  (double)chips_in[1];
             if (w < 0) return -(double)chips_in[0];
             return 0.0;
@@ -192,7 +185,7 @@ static double leduc_br_traverse(
         double total = 0.0;
         for (const auto& s : states) {
             const int cards[3] = {s.p0_card, s.p1_card, s.board};
-            int w = showdown_winner(cards);
+            int w = cfr::leduc::showdown_winner(cards);
             double u;
             if (w > 0)       u =  (double)chips_in[1];
             else if (w < 0)  u = -(double)chips_in[0];

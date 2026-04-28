@@ -11,18 +11,8 @@
 namespace cfr {
 namespace leduc {
 
-// ---- Card rank utilities ----
-
-// Deck layout: cards 0-1 are Jacks, 2-3 are Queens, 4-5 are Kings.
-inline int card_rank(int card_id) { return card_id / 2; }  // 0=J, 1=Q, 2=K
-
-inline char rank_char(int rank) {
-    constexpr char n[] = {'J', 'Q', 'K'};
-    assert(rank >= 0 && rank < 3);
-    return n[rank];
-}
-
 // ---- Acting player ----
+// card_rank() and rank_name() are already defined in leduc.h.
 // Within a single round, player 0 always acts first.
 // round_hist contains only the actions within that round (no '/' separator).
 inline int acting_player_in_round(const std::string& round_hist) {
