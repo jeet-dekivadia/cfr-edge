@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+:root {
+  --felt-green: #1a472a;
+  --felt-dark:  #14381f;
+  --gold:       #d4af37;
+  --chip-red:   #c62828;
+  --chip-blue:  #1565c0;
+  --chip-black: #212121;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #0f172a; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+/* Card shine effect */
+.card-shine {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e2e8f0 40%, #f8f9fa 100%);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+/* Felt texture */
+.felt {
+  background:
+    radial-gradient(ellipse at center, #1a472a 0%, #0f2d1a 100%);
+}
+
+/* Probability bar */
+.prob-bar {
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Glow pulse for active nodes */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(16, 185, 129, 0.4); }
+  50%       { box-shadow: 0 0 24px rgba(16, 185, 129, 0.8); }
+}
+.glow-green { animation: glow-pulse 2s ease-in-out infinite; }
+
+/* Chart tooltip */
+.chart-tooltip {
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(51, 65, 85, 0.8);
+  backdrop-filter: blur(8px);
+}
