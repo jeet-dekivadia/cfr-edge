@@ -256,9 +256,9 @@ int main(int argc, char** argv) {
     std::cout << "\n=== Texas Hold'em (MCCFR) ===\n";
     {
         InfoMap nodes;
-        std::cout << "  Running DCFR MCCFR (5000 iters)...\n";
+        std::cout << "  Running DCFR MCCFR (1000 iters)...\n";
         auto t0 = std::chrono::high_resolution_clock::now();
-        auto curve = holdem::train_holdem(nodes, 5000, Mode::DCFR, 500);
+        auto curve = holdem::train_holdem(nodes, 1000, Mode::DCFR, 200);
         auto t1 = std::chrono::high_resolution_clock::now();
         double elapsed = std::chrono::duration<double>(t1 - t0).count();
 
@@ -283,6 +283,7 @@ int main(int argc, char** argv) {
         cfg.snapshot_iters   = {5000};
 
         json out = build_json_output(cfg, curve, snapshots, nodes);
+        out["total_iterations"]     = 1000;
         out["num_infosets"]         = nodes.size();
         out["elapsed_seconds"]      = std::round(elapsed * 100.0) / 100.0;
         out["final_exploitability"] = curve.empty() ? 0.0 : curve.back().second;

@@ -72,19 +72,33 @@ std::string preflop_bucket_str(int bucket) {
     return std::string({RANK_CHAR[high], RANK_CHAR[low], 'o'});
 }
 
-// ---- Post-flop EHS² bucket ----
+// ---- Post-flop hand-strength bucket (O(1), no MC sampling) ----
+// Uses the raw 5-card (or 6/7-card) hand evaluator rank as a proxy for
+// hand strength. Lower eval rank = stronger hand.
+// We normalise the rank to [0, NUM_POSTFLOP_BUCKETS) by dividing the
+// [1..7461] rank range into equal-width bins.
+// Bucket 0 = strongest (near royal flush), Bucket 7 = weakest (high card).
 
 int postflop_bucket(int c0, int c1, const int board[], int board_count) {
     const auto& ev = handeval::get_evaluator();
-    int h1[2] = {c0, c1};
-    // Use a fixed dummy opponent hand for speed in abstraction;
-    // proper EHS integrates over all opponent hands (done in equity() via MC).
-    // We approximate with 200-sample MC equity.
-    float eq = ev.equity(h1, h1, board, board_count);  // self-vs-self = 0.5 baseline
-    // EHS: use MC equity against random opponent (equity() already does this internally)
-    // For abstraction, we bucket by equity percentile.
-    // 8 buckets: [0,12.5), [12.5,25), ..., [87.5,100]
-    int bucket = static_cast<int>(eq * NUM_POSTFLOP_BUCKETS);
+    int rank = 7461;  // default: worst possible
+
+    if (board_count >= 5) {
+        int cards7[7] = {c0, c1, board[0], board[1], board[2], board[3], board[4]};
+        rank = ev.eval7(cards7);
+    } else if (board_count >= 3) {
+        // Use best 5-of-5 (2 hole + 3 board)
+        int cards5[5] = {c0, c1, board[0], board[1], board[2]};
+        rank = ev.eval5(cards5);
+    } else {
+        // Pre-flop or 1-2 board cards: bucket by hole card ranks only
+        int r0 = handeval::card_rank(c0), r1 = handeval::card_rank(c1);
+        // Higher ranks → lower bucket (stronger)
+        return std::max(0, NUM_POSTFLOP_BUCKETS - 1 - (r0 + r1) * NUM_POSTFLOP_BUCKETS / 25);
+    }
+
+    // rank in [1..7461]: bucket 0 = best, 7 = worst
+    int bucket = (rank - 1) * NUM_POSTFLOP_BUCKETS / 7461;
     return std::min(bucket, NUM_POSTFLOP_BUCKETS - 1);
 }
 
@@ -507,27 +521,32 @@ std::vector<std::pair<int,double>> train_holdem(InfoMap& nodes,
 // ---- Monte Carlo exploitability estimate ----
 
 double holdem_exploitability_estimate(const InfoMap& nodes, int num_samples) {
-    // Estimate by simulating games where one player plays the average strategy
-    // and the other plays a greedy best response.
-    // This is an approximation; exact exploitability for HUNL is intractable.
+    // Fast exploitability proxy for HUNL:
+    // Sample deals and measure the average regret magnitude at preflop nodes.
+    // A Nash strategy has zero regret; high regret = exploitable.
+    // This is O(num_samples) with no tree traversal.
     std::mt19937 rng(99999);
-    double total_ev = 0.0;
+    double total_regret = 0.0;
     int count = 0;
 
     for (int s = 0; s < num_samples; s++) {
         HoldemDeal deal = sample_deal(rng);
-        // Simple heuristic: evaluate equity of each player's hand using EHS
-        const auto& ev = handeval::get_evaluator();
-        int h0[2] = {deal.hole[0][0], deal.hole[0][1]};
-        int h1[2] = {deal.hole[1][0], deal.hole[1][1]};
-        float eq = ev.equity(h0, h1, deal.board, 3);  // flop equity
-        // Exploitability proxy: distance from 0.5 equity averaged over samples
-        // A perfectly balanced (Nash) strategy has EV = 0 from both sides.
-        total_ev += std::abs(eq - 0.5f);
-        count++;
+        for (int player = 0; player < 2; player++) {
+            int bucket = preflop_bucket(deal.hole[player][0], deal.hole[player][1]);
+            std::string key = make_holdem_key(bucket, 0, "");
+            auto it = nodes.find(key);
+            if (it != nodes.end()) {
+                const auto& nd = it->second;
+                // Sum of positive regrets / num_actions as proxy
+                double pos_regret = 0.0;
+                for (int a = 0; a < nd.num_actions; a++)
+                    pos_regret += std::max(nd.regret_sum[a], 0.0);
+                total_regret += pos_regret / nd.num_actions;
+            }
+        }
+        count += 2;
     }
-    // Scale to big blinds: a typical HUNL game has exploitability in [0, 50bb]
-    return (count > 0) ? (total_ev / count) * 10.0 : 0.0;
+    return (count > 0) ? total_regret / count : 0.0;
 }
 
 // ---- Print strategy ----
