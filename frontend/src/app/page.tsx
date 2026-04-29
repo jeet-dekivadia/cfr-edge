@@ -1,7 +1,9 @@
 'use client';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import PokerTableScene from '@/components/PokerTableScene';
+import dynamic from 'next/dynamic';
+
+const PokerTableScene = dynamic(() => import('@/components/PokerTableScene'), { ssr: false });
 
 const FEATURES = [
   {
