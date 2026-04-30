@@ -1,6 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: ['./src/**/*.{ts,tsx,js,jsx}'],
+  content: [
+    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
   darkMode: 'class',
   theme: {
     extend: {
@@ -14,8 +18,8 @@ module.exports = {
         },
       },
       fontFamily: {
-        mono: ['var(--font-geist-mono)', 'JetBrains Mono', 'monospace'],
-        sans: ['var(--font-geist-sans)', 'Inter', 'sans-serif'],
+        mono: ['var(--font-geist-mono)', 'JetBrains Mono', 'Consolas', 'monospace'],
+        sans: ['var(--font-geist-sans)', 'Inter', 'system-ui', 'sans-serif'],
       },
       animation: {
         'glow-pulse': 'glow-pulse 2s ease-in-out infinite',
@@ -25,6 +29,9 @@ module.exports = {
           '0%, 100%': { boxShadow: '0 0 8px rgba(16, 185, 129, 0.4)' },
           '50%':       { boxShadow: '0 0 24px rgba(16, 185, 129, 0.8)' },
         },
+      },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
       },
     },
   },
