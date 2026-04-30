@@ -12,3 +12,8 @@ compile_commands.json
 results/*.csv
 results/*.png
 .venv/
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/.env*.local
