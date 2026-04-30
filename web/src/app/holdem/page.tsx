@@ -98,24 +98,20 @@ export default function HoldemPage() {
 
   const hoveredData = hoveredCell ? matrix[hoveredCell.row][hoveredCell.col] : null;
 
-  // Aggregate stats
+  // Aggregate stats — derived from preflop_summary (final_strategy is stripped from holdem JSON)
   const stats = useMemo(() => {
     if (!strategy) return null;
-    const nodes = Object.values(strategy.final_strategy);
-    let pf = nodes.filter(n => n.actions.includes('check/call'));
+    const pf = Object.values(strategy.preflop_summary ?? {});
     const avgBet = pf.length > 0
-      ? pf.reduce((s, n) => {
-          const betIdx = n.actions.indexOf('bet33');
-          const b75 = n.actions.indexOf('bet75');
-          const b100 = n.actions.indexOf('bet100');
-          return s + (n.probs[betIdx] ?? 0) + (n.probs[b75] ?? 0) + (n.probs[b100] ?? 0);
+      ? pf.reduce((s: number, actions: Record<string, number>) => {
+          return s + (actions['bet33'] ?? 0) + (actions['bet75'] ?? 0) + (actions['bet100'] ?? 0);
         }, 0) / pf.length
       : 0;
     return {
-      infosets: nodes.length,
+      infosets: strategy.num_infosets ?? Object.keys(strategy.preflop_summary ?? {}).length,
       avgBetFreq: avgBet,
-      exploitability: strategy.final_exploitability,
-      rate: strategy.convergence_rate,
+      exploitability: strategy.final_exploitability ?? 0,
+      rate: strategy.convergence_rate ?? 0,
     };
   }, [strategy]);
 
