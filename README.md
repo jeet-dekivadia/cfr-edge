@@ -1,80 +1,96 @@
 # cfr-edge
-Poker CFR / CFR+ Solver in C++
 
-One-liner: CFR/CFR+ poker solver with exploitability tracking, abstractions, and SIMD-optimized traversals.
+A full-stack poker GTO solver — CFR / CFR+ / DCFR engine in C++17 with a Next.js visualisation frontend.
 
-"cfr" is Counterfactual Regret Minimization, and "edge" hints at finding a strategic edge via exploitability-driven optimization.
+## What it does
 
-## Features
+- Solves **Kuhn Poker** (12 infosets) and **Leduc Hold'em** (288 infosets) to provable near-Nash strategies
+- **MCCFR External Sampling** on heads-up no-limit **Texas Hold'em** (33K+ infosets)
+- Exploitability tracking via exact best-response computation
+- AVX2-vectorised batch regret matching (~4 doubles/cycle)
+- SoA (Structure-of-Arrays) infoset store for cache-friendly SIMD traversal
+- Interactive Next.js frontend: convergence chart, strategy heatmap, play vs Nash, preflop range chart
 
-- Vanilla CFR and CFR+ for **Kuhn Poker** and **Leduc Hold'em**
-- Exploitability (best-response gap) computed every N iterations
-- SoA (Structure-of-Arrays) infoset store with AVX2 SIMD regret matching
-- Card-strength bucketing and action abstraction experiments for Leduc
-- CSV output of convergence curves + Python plotting script
+## Algorithms
 
-## Build
+| Algorithm | Strategy weight | Regret discount | Empirical α in ε~T^(-α) |
+|-----------|-----------------|-----------------|--------------------------|
+| CFR       | 1 (uniform)     | none            | ~0.53                    |
+| CFR+      | t (linear)      | floor at 0      | ~0.50                    |
+| DCFR      | t² (quadratic)  | pos×t^1.5/(t^1.5+1), neg→0 | ~0.61        |
 
-Requires CMake ≥ 3.16 and a C++17 compiler (MSVC, GCC, or Clang).
+## Build (C++)
 
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --config Release
+cmake --build build --config Release -j4
 ```
 
-OpenMP is detected automatically; AVX2 is enabled on MSVC via `/arch:AVX2` and on GCC/Clang via `-march=native`.
+Requires CMake ≥ 3.16, C++17 compiler, internet access to auto-fetch `nlohmann/json`.
 
-## Run
+### Run the solver
 
 ```bash
-# All experiments (Kuhn, Leduc, abstraction comparison)
-./build/cfr_solver
-
-# Kuhn only
-./build/cfr_solver --kuhn-only
-
-# Leduc only
-./build/cfr_solver --leduc-only
-
-# Skip abstraction experiments
-./build/cfr_solver --no-abstract
+./build/cfr_solver                  # all experiments
+./build/cfr_solver --kuhn-only      # Kuhn only
+./build/cfr_solver --leduc-only     # Leduc only
+./build/cfr_solver --holdem-only    # Texas Hold'em (MCCFR)
 ```
 
-Results are written to `results/`:
-| File | Contents |
-|------|----------|
-| `kuhn_convergence.csv` | CFR / CFR+ / CFR-SoA exploitability curves |
-| `leduc_convergence.csv` | CFR / CFR+ exploitability curves |
-| `abstraction_comparison.csv` | Four abstraction schemes vs. exploitability |
-
-## Plot
+### Generate strategy JSON for the frontend
 
 ```bash
-pip install matplotlib
-python scripts/plot_convergence.py
+./build/json_exporter --out ./frontend/public/strategies/
 ```
 
-Saves `results/*.png` and prints a text summary.
+## Frontend
 
-## Project Structure
+```bash
+cd frontend
+npm install
+npm run dev          # http://localhost:3000
+npm run build        # production build
+```
+
+### Pages
+
+| Route         | Description |
+|---------------|-------------|
+| `/`           | Landing page with 3D poker table |
+| `/solve`      | Live convergence chart + strategy heatmap with iteration scrubber |
+| `/play`       | Play Kuhn Poker against the Nash strategy |
+| `/strategy`   | Browse all infosets, sort by entropy / regret, export CSV |
+| `/algorithm`  | Step-by-step CFR walkthrough + live regret waterfall |
+| `/holdem`     | Texas Hold'em preflop range chart (169-hand GTO frequencies) |
+
+## Project structure
 
 ```
 include/
-  kuhn.h          – Kuhn Poker game tree + CFR traversal
-  leduc.h         – Leduc Hold'em game tree + CFR traversal
-  cfr.h           – TrainConfig / TrainResult / run_training()
-  infoset.h       – InfoNode (regret + strategy sum)
-  soa_store.h     – SoA infoset store
-  simd_utils.h    – AVX2 regret-matching helpers
-  abstraction.h   – Card bucketing + action abstraction
+  kuhn.h            Kuhn Poker game tree + CFR
+  leduc.h           Leduc Hold'em game tree + CFR
+  leduc_utils.h     Shared helpers (round_over, showdown_winner, ...)
+  cfr.h             TrainConfig / TrainResult / run_training()
+  infoset.h         InfoNode (regret + strategy sum, MAX_ACTIONS=6)
+  soa_store.h       SoA infoset store (SIMD batch ops)
+  simd_utils.h      AVX2/SSE2 regret matching helpers
+  abstraction.h     Card bucketing + action abstraction for Leduc
+  hand_eval.h       7-card poker hand evaluator
+  holdem.h          HUNL Texas Hold'em + MCCFR
+  json_output.h     Strategy JSON serialisation
+
 src/
-  kuhn.cpp
-  leduc.cpp
-  cfr.cpp
-  best_response.cpp
-  abstraction.cpp
-  main.cpp        – Experiment driver + CSV output
-scripts/
-  plot_convergence.py
-results/          – CSV / PNG output (git-ignored)
+  kuhn.cpp  leduc.cpp  cfr.cpp  abstraction.cpp
+  best_response.cpp   hand_eval.cpp  holdem.cpp
+  main.cpp            json_exporter.cpp
+
+frontend/           Next.js 14 + TypeScript + Tailwind + D3 + Three.js
+```
+
+## Results
+
+```
+Kuhn Poker  DCFR  10K iters: ε = 4.4×10⁻⁴  (Nash is ε=0)
+Leduc       DCFR  10K iters: ε = 7.5×10⁻³
+HoldEm MCCFR 1K iters: 33K infosets created
 ```
