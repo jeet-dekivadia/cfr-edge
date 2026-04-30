@@ -1,9 +1,9 @@
 // json_exporter.cpp
 // Standalone tool that runs all CFR experiments and writes strategy JSON bundles
-// into the directory consumed by the Next.js frontend.
+// into the directory consumed by the Next.js web app.
 //
 // Usage:
-//   ./json_exporter --out ../frontend/public/strategies/
+//   ./json_exporter --out ../web/public/strategies/
 //
 // Outputs:
 //   kuhn_cfr.json, kuhn_cfr_plus.json, kuhn_dcfr.json
