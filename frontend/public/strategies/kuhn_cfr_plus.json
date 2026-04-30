@@ -1,0 +1,1777 @@
+{
+  "algorithm": "CFR+",
+  "convergence": [
+    {
+      "exploitability": 0.3333333333333333,
+      "iter": 1
+    },
+    {
+      "exploitability": 0.010804910976505211,
+      "iter": 100
+    },
+    {
+      "exploitability": 0.007609199182411652,
+      "iter": 200
+    },
+    {
+      "exploitability": 0.009300804294105883,
+      "iter": 300
+    },
+    {
+      "exploitability": 0.006618205663845171,
+      "iter": 400
+    },
+    {
+      "exploitability": 0.004875651937994385,
+      "iter": 500
+    },
+    {
+      "exploitability": 0.005030814715601332,
+      "iter": 600
+    },
+    {
+      "exploitability": 0.00429985798250726,
+      "iter": 700
+    },
+    {
+      "exploitability": 0.005655753109287805,
+      "iter": 800
+    },
+    {
+      "exploitability": 0.00692648280188692,
+      "iter": 900
+    },
+    {
+      "exploitability": 0.004960916722530555,
+      "iter": 1000
+    },
+    {
+      "exploitability": 0.001949016230197646,
+      "iter": 1100
+    },
+    {
+      "exploitability": 0.004279873310128394,
+      "iter": 1200
+    },
+    {
+      "exploitability": 0.005318110812261449,
+      "iter": 1300
+    },
+    {
+      "exploitability": 0.003034941993879751,
+      "iter": 1400
+    },
+    {
+      "exploitability": 0.004269496602915257,
+      "iter": 1500
+    },
+    {
+      "exploitability": 0.004239543487915868,
+      "iter": 1600
+    },
+    {
+      "exploitability": 0.003102883764316037,
+      "iter": 1700
+    },
+    {
+      "exploitability": 0.004406828991246743,
+      "iter": 1800
+    },
+    {
+      "exploitability": 0.0018461236746755705,
+      "iter": 1900
+    },
+    {
+      "exploitability": 0.0037875213749153738,
+      "iter": 2000
+    },
+    {
+      "exploitability": 0.0016103736816263277,
+      "iter": 2100
+    },
+    {
+      "exploitability": 0.004030576564233594,
+      "iter": 2200
+    },
+    {
+      "exploitability": 0.002267481440090202,
+      "iter": 2300
+    },
+    {
+      "exploitability": 0.0038794377513106846,
+      "iter": 2400
+    },
+    {
+      "exploitability": 0.0013997740541621395,
+      "iter": 2500
+    },
+    {
+      "exploitability": 0.003596033944671099,
+      "iter": 2600
+    },
+    {
+      "exploitability": 0.001802503774047115,
+      "iter": 2700
+    },
+    {
+      "exploitability": 0.0038423756527832067,
+      "iter": 2800
+    },
+    {
+      "exploitability": 0.0022524021750333634,
+      "iter": 2900
+    },
+    {
+      "exploitability": 0.002809969837691643,
+      "iter": 3000
+    },
+    {
+      "exploitability": 0.002878602305498542,
+      "iter": 3100
+    },
+    {
+      "exploitability": 0.0021090845982667528,
+      "iter": 3200
+    },
+    {
+      "exploitability": 0.0029271344812911346,
+      "iter": 3300
+    },
+    {
+      "exploitability": 0.0016159425070934597,
+      "iter": 3400
+    },
+    {
+      "exploitability": 0.0031313007053529462,
+      "iter": 3500
+    },
+    {
+      "exploitability": 0.0022362291683256283,
+      "iter": 3600
+    },
+    {
+      "exploitability": 0.0022109255064345357,
+      "iter": 3700
+    },
+    {
+      "exploitability": 0.0029081146017310155,
+      "iter": 3800
+    },
+    {
+      "exploitability": 0.0014304587614045183,
+      "iter": 3900
+    },
+    {
+      "exploitability": 0.002941511117324861,
+      "iter": 4000
+    },
+    {
+      "exploitability": 0.002254069555153541,
+      "iter": 4100
+    },
+    {
+      "exploitability": 0.0013514693307151715,
+      "iter": 4200
+    },
+    {
+      "exploitability": 0.0029681033580774008,
+      "iter": 4300
+    },
+    {
+      "exploitability": 0.002016559940197893,
+      "iter": 4400
+    },
+    {
+      "exploitability": 0.0019076189535565853,
+      "iter": 4500
+    },
+    {
+      "exploitability": 0.0026307641288975483,
+      "iter": 4600
+    },
+    {
+      "exploitability": 0.001971843174154405,
+      "iter": 4700
+    },
+    {
+      "exploitability": 0.0017076904336083925,
+      "iter": 4800
+    },
+    {
+      "exploitability": 0.0028212509394583973,
+      "iter": 4900
+    },
+    {
+      "exploitability": 0.0019672718525194552,
+      "iter": 5000
+    },
+    {
+      "exploitability": 0.0015224188170297654,
+      "iter": 5100
+    },
+    {
+      "exploitability": 0.002890846284047991,
+      "iter": 5200
+    },
+    {
+      "exploitability": 0.00166821956183875,
+      "iter": 5300
+    },
+    {
+      "exploitability": 0.001859717501815017,
+      "iter": 5400
+    },
+    {
+      "exploitability": 0.0024005750691982,
+      "iter": 5500
+    },
+    {
+      "exploitability": 0.002002505992703555,
+      "iter": 5600
+    },
+    {
+      "exploitability": 0.0011621120345342757,
+      "iter": 5700
+    },
+    {
+      "exploitability": 0.002765948904688916,
+      "iter": 5800
+    },
+    {
+      "exploitability": 0.0019099500964532279,
+      "iter": 5900
+    },
+    {
+      "exploitability": 0.00122723429289473,
+      "iter": 6000
+    },
+    {
+      "exploitability": 0.002087371604335327,
+      "iter": 6100
+    },
+    {
+      "exploitability": 0.002135472530407393,
+      "iter": 6200
+    },
+    {
+      "exploitability": 0.0012104004689277674,
+      "iter": 6300
+    },
+    {
+      "exploitability": 0.0019847964470997015,
+      "iter": 6400
+    },
+    {
+      "exploitability": 0.0021659389524214903,
+      "iter": 6500
+    },
+    {
+      "exploitability": 0.001727584397678746,
+      "iter": 6600
+    },
+    {
+      "exploitability": 0.001077945678549408,
+      "iter": 6700
+    },
+    {
+      "exploitability": 0.002535055963756342,
+      "iter": 6800
+    },
+    {
+      "exploitability": 0.0017146487200368303,
+      "iter": 6900
+    },
+    {
+      "exploitability": 0.001216369679732876,
+      "iter": 7000
+    },
+    {
+      "exploitability": 0.0015831893337070468,
+      "iter": 7100
+    },
+    {
+      "exploitability": 0.00238829500011963,
+      "iter": 7200
+    },
+    {
+      "exploitability": 0.0014986330606882221,
+      "iter": 7300
+    },
+    {
+      "exploitability": 0.0013313119942473712,
+      "iter": 7400
+    },
+    {
+      "exploitability": 0.0021020969777707323,
+      "iter": 7500
+    },
+    {
+      "exploitability": 0.0017660787675147598,
+      "iter": 7600
+    },
+    {
+      "exploitability": 0.0012290358862699173,
+      "iter": 7700
+    },
+    {
+      "exploitability": 0.0012491309944837787,
+      "iter": 7800
+    },
+    {
+      "exploitability": 0.0023923841977452343,
+      "iter": 7900
+    },
+    {
+      "exploitability": 0.0015950237826693099,
+      "iter": 8000
+    },
+    {
+      "exploitability": 0.001176358503407841,
+      "iter": 8100
+    },
+    {
+      "exploitability": 0.0014187126150359368,
+      "iter": 8200
+    },
+    {
+      "exploitability": 0.0021743195123290113,
+      "iter": 8300
+    },
+    {
+      "exploitability": 0.0015647711879127797,
+      "iter": 8400
+    },
+    {
+      "exploitability": 0.0009071247294620463,
+      "iter": 8500
+    },
+    {
+      "exploitability": 0.0017983918317463858,
+      "iter": 8600
+    },
+    {
+      "exploitability": 0.0019066538660477324,
+      "iter": 8700
+    },
+    {
+      "exploitability": 0.001707715640783869,
+      "iter": 8800
+    },
+    {
+      "exploitability": 0.0007118103648465213,
+      "iter": 8900
+    },
+    {
+      "exploitability": 0.0016316028583518623,
+      "iter": 9000
+    },
+    {
+      "exploitability": 0.002139315907926098,
+      "iter": 9100
+    },
+    {
+      "exploitability": 0.001476115110730425,
+      "iter": 9200
+    },
+    {
+      "exploitability": 0.0010202663153816942,
+      "iter": 9300
+    },
+    {
+      "exploitability": 0.001410257369890977,
+      "iter": 9400
+    },
+    {
+      "exploitability": 0.0020100659528962486,
+      "iter": 9500
+    },
+    {
+      "exploitability": 0.0014965461103988071,
+      "iter": 9600
+    },
+    {
+      "exploitability": 0.0008473615054967835,
+      "iter": 9700
+    },
+    {
+      "exploitability": 0.0015608210477625988,
+      "iter": 9800
+    },
+    {
+      "exploitability": 0.0018846862098264954,
+      "iter": 9900
+    },
+    {
+      "exploitability": 0.0015851665009203504,
+      "iter": 10000
+    }
+  ],
+  "convergence_rate": 0.496,
+  "elapsed_seconds": 0.02,
+  "final_exploitability": 0.0015851665009203504,
+  "final_strategy": {
+    "J:": {
+      "actions": [
+        "pass",
+        "bet"
+      ],
+      "probs": [
+        0.7497,
+        0.2503
+      ],
+      "regrets": [
+        121.290937,
+        9.440084
+      ]
+    },
+    "J:b": {
+      "actions": [
+        "pass",
+        "bet"
+      ],
+      "probs": [
+        1.0,
+        0.0
+      ],
+      "regrets": [
+        0.25,
+        0.0
+      ]
+    },
+    "J:p": {
+      "actions": [
+        "pass",
+        "bet"
+      ],
+      "probs": [
+        0.6615,
+        0.3385
+      ],
+      "regrets": [
+        27.402882,
+        17.507779
+      ]
+    },
+    "J:pb": {
+      "actions": [
+        "pass",
+        "bet"
+      ],
+      "probs": [
+        1.0,
+        0.0
+      ],
+      "regrets": [
+        0.25,
+        0.0
+      ]
+    },
+    "K:": {
+      "actions": [
+        "pass",
+        "bet"
+      ],
+      "probs": [
+        0.246,
+        0.754
+      ],
+      "regrets": [
+        13.058048,
+        41.341024
+      ]
+    },
+    "K:b": {
+      "actions": [
+        "pass",
+        "bet"
+      ],
+      "probs": [
+        0.0,
+        1.0
+      ],
+      "regrets": [
+        0.0,
+        1.5
+      ]
+    },
+    "K:p": {
+      "actions": [
+        "pass",
+        "bet"
+      ],
+      "probs": [
+        0.0,
+        1.0
+      ],
+      "regrets": [
+        0.0,
+        0.4375
+      ]
+    },
+    "K:pb": {
+      "actions": [
+        "pass",
+        "bet"
+      ],
+      "probs": [
+        0.0,
+        1.0
+      ],
+      "regrets": [
+        0.0,
+        1.5
+      ]
+    },
+    "Q:": {
+      "actions": [
+        "pass",
+        "bet"
+      ],
+      "probs": [
+        0.9979,
+        0.0021
+      ],
+      "regrets": [
+        28.211883,
+        0.0
+      ]
+    },
+    "Q:b": {
+      "actions": [
+        "pass",
+        "bet"
+      ],
+      "probs": [
+        0.6588,
+        0.3412
+      ],
+      "regrets": [
+        87.653057,
+        18.38394
+      ]
+    },
+    "Q:p": {
+      "actions": [
+        "pass",
+        "bet"
+      ],
+      "probs": [
+        1.0,
+        0.0
+      ],
+      "regrets": [
+        0.673993,
+        0.0
+      ]
+    },
+    "Q:pb": {
+      "actions": [
+        "pass",
+        "bet"
+      ],
+      "probs": [
+        0.4112,
+        0.5888
+      ],
+      "regrets": [
+        40.420165,
+        100.680548
+      ]
+    }
+  },
+  "game": "kuhn",
+  "iterations": 10000,
+  "num_infosets": 12,
+  "strategy_snapshots": {
+    "1000": {
+      "J:": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.7339,
+          0.2661
+        ],
+        "regrets": [
+          34.74277,
+          14.892508
+        ]
+      },
+      "J:b": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          1.0,
+          0.0
+        ],
+        "regrets": [
+          0.25,
+          0.0
+        ]
+      },
+      "J:p": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.6645,
+          0.3355
+        ],
+        "regrets": [
+          8.3056,
+          6.153431
+        ]
+      },
+      "J:pb": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          1.0,
+          0.0
+        ],
+        "regrets": [
+          0.25,
+          0.0
+        ]
+      },
+      "K:": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.2419,
+          0.7581
+        ],
+        "regrets": [
+          2.638136,
+          14.179432
+        ]
+      },
+      "K:b": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.0,
+          1.0
+        ],
+        "regrets": [
+          0.0,
+          1.5
+        ]
+      },
+      "K:p": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.0,
+          1.0
+        ],
+        "regrets": [
+          0.0,
+          0.4375
+        ]
+      },
+      "K:pb": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.0,
+          1.0
+        ],
+        "regrets": [
+          0.0,
+          1.5
+        ]
+      },
+      "Q:": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.9937,
+          0.0063
+        ],
+        "regrets": [
+          8.694095,
+          0.0
+        ]
+      },
+      "Q:b": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.6517,
+          0.3483
+        ],
+        "regrets": [
+          18.344126,
+          21.623624
+        ]
+      },
+      "Q:p": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          1.0,
+          0.0
+        ],
+        "regrets": [
+          0.673993,
+          0.0
+        ]
+      },
+      "Q:pb": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.4009,
+          0.5991
+        ],
+        "regrets": [
+          25.213149,
+          24.307797
+        ]
+      }
+    },
+    "10000": {
+      "J:": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.7497,
+          0.2503
+        ],
+        "regrets": [
+          121.290937,
+          9.440084
+        ]
+      },
+      "J:b": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          1.0,
+          0.0
+        ],
+        "regrets": [
+          0.25,
+          0.0
+        ]
+      },
+      "J:p": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.6615,
+          0.3385
+        ],
+        "regrets": [
+          27.402882,
+          17.507779
+        ]
+      },
+      "J:pb": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          1.0,
+          0.0
+        ],
+        "regrets": [
+          0.25,
+          0.0
+        ]
+      },
+      "K:": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.246,
+          0.754
+        ],
+        "regrets": [
+          13.058048,
+          41.341024
+        ]
+      },
+      "K:b": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.0,
+          1.0
+        ],
+        "regrets": [
+          0.0,
+          1.5
+        ]
+      },
+      "K:p": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.0,
+          1.0
+        ],
+        "regrets": [
+          0.0,
+          0.4375
+        ]
+      },
+      "K:pb": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.0,
+          1.0
+        ],
+        "regrets": [
+          0.0,
+          1.5
+        ]
+      },
+      "Q:": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.9979,
+          0.0021
+        ],
+        "regrets": [
+          28.211883,
+          0.0
+        ]
+      },
+      "Q:b": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.6588,
+          0.3412
+        ],
+        "regrets": [
+          87.653057,
+          18.38394
+        ]
+      },
+      "Q:p": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          1.0,
+          0.0
+        ],
+        "regrets": [
+          0.673993,
+          0.0
+        ]
+      },
+      "Q:pb": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.4112,
+          0.5888
+        ],
+        "regrets": [
+          40.420165,
+          100.680548
+        ]
+      }
+    },
+    "200": {
+      "J:": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.7473,
+          0.2527
+        ],
+        "regrets": [
+          14.584371,
+          7.788854
+        ]
+      },
+      "J:b": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          1.0,
+          0.0
+        ],
+        "regrets": [
+          0.25,
+          0.0
+        ]
+      },
+      "J:p": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.6617,
+          0.3383
+        ],
+        "regrets": [
+          4.665763,
+          0.073088
+        ]
+      },
+      "J:pb": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          1.0,
+          0.0
+        ],
+        "regrets": [
+          0.25,
+          0.0
+        ]
+      },
+      "K:": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.2262,
+          0.7738
+        ],
+        "regrets": [
+          2.092595,
+          6.713028
+        ]
+      },
+      "K:b": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.0,
+          1.0
+        ],
+        "regrets": [
+          0.0,
+          1.5
+        ]
+      },
+      "K:p": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.0001,
+          0.9999
+        ],
+        "regrets": [
+          0.0,
+          0.4375
+        ]
+      },
+      "K:pb": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.0,
+          1.0
+        ],
+        "regrets": [
+          0.0,
+          1.5
+        ]
+      },
+      "Q:": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.9871,
+          0.0129
+        ],
+        "regrets": [
+          3.782343,
+          0.0
+        ]
+      },
+      "Q:b": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.6386,
+          0.3614
+        ],
+        "regrets": [
+          12.083005,
+          2.891757
+        ]
+      },
+      "Q:p": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.9998,
+          0.0002
+        ],
+        "regrets": [
+          0.673993,
+          0.0
+        ]
+      },
+      "Q:pb": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.3605,
+          0.6395
+        ],
+        "regrets": [
+          10.508907,
+          12.448016
+        ]
+      }
+    },
+    "2000": {
+      "J:": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.7419,
+          0.2581
+        ],
+        "regrets": [
+          53.695807,
+          0.661715
+        ]
+      },
+      "J:b": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          1.0,
+          0.0
+        ],
+        "regrets": [
+          0.25,
+          0.0
+        ]
+      },
+      "J:p": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.6599,
+          0.3401
+        ],
+        "regrets": [
+          9.523434,
+          10.98018
+        ]
+      },
+      "J:pb": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          1.0,
+          0.0
+        ],
+        "regrets": [
+          0.25,
+          0.0
+        ]
+      },
+      "K:": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.2422,
+          0.7578
+        ],
+        "regrets": [
+          1.051043,
+          20.118759
+        ]
+      },
+      "K:b": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.0,
+          1.0
+        ],
+        "regrets": [
+          0.0,
+          1.5
+        ]
+      },
+      "K:p": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.0,
+          1.0
+        ],
+        "regrets": [
+          0.0,
+          0.4375
+        ]
+      },
+      "K:pb": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.0,
+          1.0
+        ],
+        "regrets": [
+          0.0,
+          1.5
+        ]
+      },
+      "Q:": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.9953,
+          0.0047
+        ],
+        "regrets": [
+          12.485473,
+          0.0
+        ]
+      },
+      "Q:b": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.6482,
+          0.3518
+        ],
+        "regrets": [
+          31.463058,
+          24.828615
+        ]
+      },
+      "Q:p": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          1.0,
+          0.0
+        ],
+        "regrets": [
+          0.673993,
+          0.0
+        ]
+      },
+      "Q:pb": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.4067,
+          0.5933
+        ],
+        "regrets": [
+          27.429396,
+          40.873724
+        ]
+      }
+    },
+    "50": {
+      "J:": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.7038,
+          0.2962
+        ],
+        "regrets": [
+          7.305884,
+          0.0
+        ]
+      },
+      "J:b": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.9998,
+          0.0002
+        ],
+        "regrets": [
+          0.25,
+          0.0
+        ]
+      },
+      "J:p": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.6137,
+          0.3863
+        ],
+        "regrets": [
+          2.827961,
+          0.699497
+        ]
+      },
+      "J:pb": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.9999,
+          0.0001
+        ],
+        "regrets": [
+          0.25,
+          0.0
+        ]
+      },
+      "K:": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.2582,
+          0.7418
+        ],
+        "regrets": [
+          0.0,
+          3.910756
+        ]
+      },
+      "K:b": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.0002,
+          0.9998
+        ],
+        "regrets": [
+          0.0,
+          1.5
+        ]
+      },
+      "K:p": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.0012,
+          0.9988
+        ],
+        "regrets": [
+          0.0,
+          0.4375
+        ]
+      },
+      "K:pb": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.0004,
+          0.9996
+        ],
+        "regrets": [
+          0.0,
+          1.5
+        ]
+      },
+      "Q:": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.957,
+          0.043
+        ],
+        "regrets": [
+          2.336275,
+          0.0
+        ]
+      },
+      "Q:b": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.5193,
+          0.4807
+        ],
+        "regrets": [
+          3.352178,
+          5.066483
+        ]
+      },
+      "Q:p": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.9974,
+          0.0026
+        ],
+        "regrets": [
+          0.673993,
+          0.0
+        ]
+      },
+      "Q:pb": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.3398,
+          0.6602
+        ],
+        "regrets": [
+          3.206089,
+          7.816625
+        ]
+      }
+    },
+    "500": {
+      "J:": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.7537,
+          0.2463
+        ],
+        "regrets": [
+          24.233517,
+          11.060103
+        ]
+      },
+      "J:b": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          1.0,
+          0.0
+        ],
+        "regrets": [
+          0.25,
+          0.0
+        ]
+      },
+      "J:p": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.6638,
+          0.3362
+        ],
+        "regrets": [
+          7.308882,
+          0.979864
+        ]
+      },
+      "J:pb": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          1.0,
+          0.0
+        ],
+        "regrets": [
+          0.25,
+          0.0
+        ]
+      },
+      "K:": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.2411,
+          0.7589
+        ],
+        "regrets": [
+          2.401331,
+          10.257868
+        ]
+      },
+      "K:b": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.0,
+          1.0
+        ],
+        "regrets": [
+          0.0,
+          1.5
+        ]
+      },
+      "K:p": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.0,
+          1.0
+        ],
+        "regrets": [
+          0.0,
+          0.4375
+        ]
+      },
+      "K:pb": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.0,
+          1.0
+        ],
+        "regrets": [
+          0.0,
+          1.5
+        ]
+      },
+      "Q:": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.9914,
+          0.0086
+        ],
+        "regrets": [
+          6.063919,
+          0.0
+        ]
+      },
+      "Q:b": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.6487,
+          0.3513
+        ],
+        "regrets": [
+          19.426644,
+          2.037268
+        ]
+      },
+      "Q:p": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          1.0,
+          0.0
+        ],
+        "regrets": [
+          0.673993,
+          0.0
+        ]
+      },
+      "Q:pb": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.386,
+          0.614
+        ],
+        "regrets": [
+          17.648396,
+          18.114084
+        ]
+      }
+    },
+    "5000": {
+      "J:": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.7506,
+          0.2494
+        ],
+        "regrets": [
+          79.405378,
+          33.212561
+        ]
+      },
+      "J:b": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          1.0,
+          0.0
+        ],
+        "regrets": [
+          0.25,
+          0.0
+        ]
+      },
+      "J:p": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.6605,
+          0.3395
+        ],
+        "regrets": [
+          21.243515,
+          8.620352
+        ]
+      },
+      "J:pb": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          1.0,
+          0.0
+        ],
+        "regrets": [
+          0.25,
+          0.0
+        ]
+      },
+      "K:": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.244,
+          0.756
+        ],
+        "regrets": [
+          14.973639,
+          27.184894
+        ]
+      },
+      "K:b": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.0,
+          1.0
+        ],
+        "regrets": [
+          0.0,
+          1.5
+        ]
+      },
+      "K:p": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.0,
+          1.0
+        ],
+        "regrets": [
+          0.0,
+          0.4375
+        ]
+      },
+      "K:pb": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.0,
+          1.0
+        ],
+        "regrets": [
+          0.0,
+          1.5
+        ]
+      },
+      "Q:": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.9971,
+          0.0029
+        ],
+        "regrets": [
+          19.788641,
+          0.0
+        ]
+      },
+      "Q:b": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.6598,
+          0.3402
+        ],
+        "regrets": [
+          63.03214,
+          5.19588
+        ]
+      },
+      "Q:p": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          1.0,
+          0.0
+        ],
+        "regrets": [
+          0.673993,
+          0.0
+        ]
+      },
+      "Q:pb": {
+        "actions": [
+          "pass",
+          "bet"
+        ],
+        "probs": [
+          0.4079,
+          0.5921
+        ],
+        "regrets": [
+          33.97615,
+          69.343673
+        ]
+      }
+    }
+  }
+}

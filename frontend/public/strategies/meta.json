@@ -1,0 +1,60 @@
+{
+  "games": [
+    {
+      "description": "3-card poker with 12 information sets. Unique analytically known Nash equilibrium.",
+      "files": [
+        {
+          "algorithm": "CFR",
+          "file": "kuhn_cfr.json",
+          "final_exploitability": 0.0014858991314368002
+        },
+        {
+          "algorithm": "CFR+",
+          "file": "kuhn_cfr_plus.json",
+          "final_exploitability": 0.0015851665009203504
+        },
+        {
+          "algorithm": "DCFR",
+          "file": "kuhn_dcfr.json",
+          "final_exploitability": 0.0004408501071300197
+        }
+      ],
+      "game": "kuhn",
+      "nash_exploitability": 0.0
+    },
+    {
+      "description": "Simplified Hold'em with 2 betting rounds and a public card. 936 information sets.",
+      "files": [
+        {
+          "algorithm": "CFR",
+          "file": "leduc_cfr.json",
+          "final_exploitability": 0.003834179023616227
+        },
+        {
+          "algorithm": "CFR+",
+          "file": "leduc_cfr_plus.json",
+          "final_exploitability": 0.007872719089016017
+        },
+        {
+          "algorithm": "DCFR",
+          "file": "leduc_dcfr.json",
+          "final_exploitability": 0.007542321029333443
+        }
+      ],
+      "game": "leduc"
+    },
+    {
+      "description": "Heads-up No-Limit Texas Hold'em. 169 preflop + EHS2 postflop abstraction, MCCFR external sampling.",
+      "files": [
+        {
+          "algorithm": "DCFR",
+          "file": "holdem_dcfr.json",
+          "final_exploitability": 31.606609709538823
+        }
+      ],
+      "game": "holdem"
+    }
+  ],
+  "generated_at": "2026-04-30",
+  "version": "2.0"
+}
