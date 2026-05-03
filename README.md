@@ -1,77 +1,72 @@
 # CFR-Edge
 
-CFR-Edge is a poker solver and visualization project built around Counterfactual Regret Minimization. The repository contains a C++17 engine for solving poker games and a Next.js app for exploring the results.
+CFR-Edge is a poker solver and visualization project built around Counterfactual Regret Minimization. It started as a way to make poker theory feel less abstract and ended up becoming a full stack system for training strategies, checking convergence, and exploring the output in a browser.
 
-## What’s Included
+The core engine is written in C++17. The interface is a Next.js app that turns solver output into something you can actually inspect: convergence curves, strategy heatmaps, poker tables, and a play-against-the-solution demo.
 
-- C++ solver for CFR, CFR+, DCFR, and Monte Carlo CFR
-- Support for Kuhn Poker, Leduc Hold'em, and Heads-Up No-Limit Texas Hold'em
-- Next.js web app for convergence charts, strategy exploration, and play-vs-strategy views
-- Precomputed strategy bundles served as static files from `web/public/strategies/`
+## What’s here
 
-## Architecture
+- A C++ solver for Kuhn Poker, Leduc Hold’em, and abstracted heads-up no-limit Texas Hold’em.
+- CFR, CFR+, and DCFR implementations, plus MCCFR with external sampling for the larger game.
+- A Next.js dashboard that loads precomputed strategy bundles from static JSON files.
+- A small set of visual tools for comparing algorithms, browsing infosets, and replaying how a strategy settles over time.
 
-```mermaid
-flowchart LR
-  A[C++ solver\ninclude/ + src/] --> B[Strategy exports\nJSON + CSV]
-  B --> C[web/public/strategies/]
-  C --> D[Next.js app\nweb/]
-  D --> E[Charts, strategy explorer, play mode]
-```
+## The short version
 
-## Repository Layout
+The project is split into two parts that work together but stay independent:
 
-```mermaid
-mindmap
-  root((cfr-edge))
-    include/
-    src/
-    web/
-    scripts/
-    results/
-```
+- The C++ side does the heavy lifting: tree traversal, regret updates, exploitability checks, and JSON export.
+- The web side makes the result easier to read: charts, tables, heatmaps, an interactive poker table, and a simple play mode against a solved strategy.
 
-## Requirements
+That separation matters. It keeps the solver honest and keeps the UI lightweight.
 
-- CMake 3.16 or newer
-- A C++17 compiler
-- Node.js 20.9 or newer for the web app
-- npm 10 or newer
+## Games
 
-## Build the Solver
+The current build covers three poker settings:
 
-```bash
-cmake -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --config Release -j$(nproc)
-```
+- Kuhn Poker, which is small enough to fully traverse and use as a sanity check.
+- Leduc Hold’em, which adds a public card and a much larger information set space.
+- Heads-up no-limit Texas Hold’em, handled with abstraction and Monte Carlo CFR so the state space stays tractable.
 
-## Run Experiments
+## Algorithms
 
-```bash
-./build/cfr_solver
-./build/cfr_solver --kuhn-only
-./build/cfr_solver --leduc-only
-./build/cfr_solver --holdem-only
-```
+The engine includes three closely related CFR variants:
 
-Results are written to `results/`.
+- Vanilla CFR, the baseline form.
+- CFR+, which clips negative regret and usually converges faster in practice.
+- DCFR, which discounts early regret and is the variant this project leans on most heavily.
 
-## Export Strategy Data
+For the larger Hold’em setup, the solver switches to external-sampling MCCFR so the tree can be explored without traversing every branch every time.
 
-```bash
-./build/json_exporter --out ./web/public/strategies/
-```
+## Web experience
 
-## Run the Web App
+The browser app is meant to feel more like an explorable notebook than a dashboard full of metrics.
 
-```bash
-cd web
-npm install
-npm run dev
-```
+- `/` is the home page and reads like a project note: why the solver exists and what changed while building it.
+- `/solve` shows convergence, algorithm comparisons, and strategy snapshots.
+- `/play` lets you play Kuhn Poker against the solved Nash strategy.
+- `/strategy` is a table view of infosets and action probabilities.
+- `/algorithm` walks through CFR step by step.
+- `/holdem` shows the abstracted Hold’em range view.
 
-Open `http://localhost:3000`.
+## Data flow
 
-## Notes
+Solver runs produce JSON strategy bundles in `web/public/strategies/`. The app reads those files directly, so the UI does not depend on a live backend. That keeps the whole thing easy to move around, easy to deploy, and easy to inspect later.
 
-The web app is static-data driven. It does not need a live solver process or backend API at runtime.
+## Project layout
+
+- `include/` and `src/` contain the C++ engine.
+- `web/` contains the Next.js app and its visual components.
+- `scripts/` contains plotting helpers for convergence data.
+- `results/` stores generated CSV output.
+
+## A few notes
+
+- This project is meant to be educational and inspectable, not a claim that the solver is state of the art.
+- The numbers and charts in the repo are snapshots from the current implementation.
+- The best part of the project is probably the visual layer, because it makes it much easier to see when the solver is doing something sensible and when it is not.
+
+## Authors
+
+- Himansh Chitkara
+- Jeet Dekivadia
