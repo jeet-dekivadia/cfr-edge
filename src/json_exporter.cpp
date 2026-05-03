@@ -247,7 +247,7 @@ int main(int argc, char** argv) {
         fentry["final_exploitability"] = res.curve.back().second;
         leduc_entry["files"].push_back(fentry);
     }
-    leduc_entry["description"] = "Simplified Hold'em with 2 betting rounds and a public card. 936 information sets.";
+    leduc_entry["description"] = "Simplified Hold'em with 2 betting rounds and a public card. 288 exported information sets.";
     meta["games"].push_back(leduc_entry);
 
     // ============================================================

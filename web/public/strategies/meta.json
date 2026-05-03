@@ -23,7 +23,7 @@
       "nash_exploitability": 0.0
     },
     {
-      "description": "Simplified Hold'em with 2 betting rounds and a public card. 936 information sets.",
+      "description": "Simplified Hold'em with 2 betting rounds and a public card. 288 exported information sets.",
       "files": [
         {
           "algorithm": "CFR",

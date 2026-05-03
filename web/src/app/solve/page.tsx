@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import ConvergenceChart from '@/components/charts/ConvergenceChart';
 import StrategyHeatmap from '@/components/charts/StrategyHeatmap';
@@ -15,36 +15,41 @@ const GAMES: { id: GameType; label: string; desc: string }[] = [
 
 export default function SolvePage() {
   const [allStrats, setAllStrats] = useState<Record<string, GameStrategy>>({});
-  const [loading, setLoading]     = useState(true);
+  const [loadedGame, setLoadedGame] = useState<GameType | null>(null);
   const [game, setGame]           = useState<GameType>('kuhn');
   const [logScale, setLogScale]   = useState(true);
   const [currentIter, setCurrentIter] = useState(10000);
   const [isPlaying, setIsPlaying] = useState(false);
   const [snapIndex, setSnapIndex] = useState(0);
 
+  const loading = loadedGame !== game;
+
   // ── Load strategies whenever the selected game changes ─────────────────
   useEffect(() => {
-    setLoading(true);
-    setAllStrats({});        // clear stale data from previous game
-    setSnapIndex(0);
-    setIsPlaying(false);
-
+    let active = true;
     loadAllAlgos(game)
       .then(strats => {
+        if (!active) return;
         setAllStrats(strats);
-        setLoading(false);
         const first = Object.values(strats)[0];
         setCurrentIter(first?.iterations ?? 10000);
+        setLoadedGame(game);
       })
-      .catch(err => { console.error(err); setLoading(false); });
+      .catch(err => {
+        if (!active) return;
+        console.error(err);
+        setAllStrats({});
+        setLoadedGame(game);
+      });
+    return () => { active = false; };
   }, [game]);
 
   // ── Derived: DCFR strategy + snapshot keys ──────────────────────────────
   const dcfrStrat  = allStrats['DCFR'] ?? null;
 
   // Guard: strategy_snapshots may be absent (e.g. trimmed holdem JSON)
-  const snapshots  = dcfrStrat?.strategy_snapshots ?? {};
-  const snapKeys   = Object.keys(snapshots).map(Number).sort((a, b) => a - b);
+  const snapshots  = useMemo(() => dcfrStrat?.strategy_snapshots ?? {}, [dcfrStrat]);
+  const snapKeys   = useMemo(() => Object.keys(snapshots).map(Number).sort((a, b) => a - b), [snapshots]);
   const hasSnaps   = snapKeys.length > 0;
 
   // Current strategy to display in the heatmap
@@ -54,7 +59,7 @@ export default function SolvePage() {
       const key = String(snapKeys[Math.min(snapIndex, snapKeys.length - 1)]);
       return snapshots[key] ?? dcfrStrat.final_strategy ?? null;
     }
-    return dcfrStrat.final_strategy ?? null;
+    return Object.keys(dcfrStrat.final_strategy ?? {}).length > 0 ? dcfrStrat.final_strategy : null;
   })();
 
   // ── Auto-play through snapshots ─────────────────────────────────────────
@@ -69,7 +74,7 @@ export default function SolvePage() {
       });
     }, 600);
     return () => clearInterval(id);
-  }, [isPlaying, hasSnaps, snapKeys]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isPlaying, hasSnaps, snapKeys]);
 
   // ── Convergence chart data (all loaded algorithms) ──────────────────────
   const chartData = Object.fromEntries(
@@ -85,13 +90,14 @@ export default function SolvePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-6">
+    <div className="min-h-screen bg-[#050806] text-white p-4 sm:p-6">
       <div className="max-w-7xl mx-auto">
 
         {/* ── Header ── */}
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <h1 className="text-4xl font-black text-white mb-2">Live CFR Solver</h1>
-          <p className="text-gray-400">
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8 rounded-md border border-emerald-900/70 bg-[#07110a] p-5 sm:p-6">
+          <div className="font-mono text-xs uppercase tracking-[0.2em] text-emerald-300">C++ Export Playback</div>
+          <h1 className="mt-2 mb-2 font-display text-5xl font-semibold text-emerald-50">Live CFR Solver</h1>
+          <p className="max-w-3xl text-gray-400">
             Watch the algorithm converge to Nash equilibrium. Scrub through iterations to see
             strategies evolve from uniform random to near-optimal.
           </p>
@@ -102,11 +108,15 @@ export default function SolvePage() {
           {GAMES.map(g => (
             <button
               key={g.id}
-              onClick={() => setGame(g.id)}
+              onClick={() => {
+                setGame(g.id);
+                setSnapIndex(0);
+                setIsPlaying(false);
+              }}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 game === g.id
                   ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30'
-                  : 'bg-gray-800 text-gray-400 hover:text-white'
+                  : 'bg-[#07110a] text-gray-400 hover:text-white hover:bg-emerald-300/[0.08]'
               }`}
             >
               {g.label}
@@ -115,8 +125,8 @@ export default function SolvePage() {
           ))}
           <button
             onClick={() => setLogScale(v => !v)}
-            className="px-3 py-2 rounded-lg text-xs font-mono border border-gray-700 text-gray-400
-                       hover:text-white transition-colors ml-auto"
+            className="px-3 py-2 rounded-lg text-xs font-mono border border-emerald-900/70 text-gray-400
+                       hover:border-emerald-400/50 hover:text-white transition-colors ml-auto"
           >
             {logScale ? 'log scale' : 'linear scale'}
           </button>
@@ -126,7 +136,7 @@ export default function SolvePage() {
 
           {/* ── Left: chart + scrubber ── */}
           <div className="lg:col-span-3 space-y-4">
-            <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6">
+            <div className="surface rounded-md p-5 sm:p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold text-white">Exploitability Convergence</h2>
                 <span className="text-xs text-gray-500 font-mono">ε(T) ~ C · T<sup>-α</sup></span>
@@ -209,9 +219,12 @@ export default function SolvePage() {
 
             {/* Algorithm comparison cards */}
             {!loading && Object.keys(allStrats).length > 0 && (
-              <div className={`grid gap-3 grid-cols-${Math.min(Object.keys(allStrats).length, 3)}`}>
+              <div
+                className="grid gap-3"
+                style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}
+              >
                 {Object.entries(allStrats).map(([algo, s]) => (
-                  <div key={algo} className="bg-gray-900/60 rounded-xl border border-gray-800 p-4">
+                  <div key={algo} className="surface-quiet rounded-md p-4">
                     <div className="text-xs text-gray-500 mb-1">{algo}</div>
                     <div className="text-2xl font-black text-white font-mono">
                       {fmt(s.final_exploitability ?? 0)}
@@ -229,7 +242,7 @@ export default function SolvePage() {
 
           {/* ── Right: strategy heatmap ── */}
           <div className="lg:col-span-2">
-            <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6 h-full">
+            <div className="surface rounded-md p-5 sm:p-6 h-full">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold text-white">
                   Strategy
@@ -249,7 +262,7 @@ export default function SolvePage() {
               ) : !currentStrategy ? (
                 <div className="text-gray-600 text-sm">
                   {game === 'holdem'
-                    ? 'Full strategy not available for Texas Hold\'em (use the /holdem page for the range chart).'
+                    ? 'Texas Hold\'em exports a preflop summary for the range chart.'
                     : 'Select a game to view the strategy.'}
                 </div>
               ) : (
@@ -277,7 +290,7 @@ export default function SolvePage() {
               { label: 'Convergence α', value: (dcfrStrat.convergence_rate ?? 0).toFixed(3),   sub: 'ε ~ C · T⁻ᵅ' },
               { label: 'Solve time',    value: dcfrStrat.elapsed_seconds != null ? `${dcfrStrat.elapsed_seconds.toFixed(1)}s` : '—', sub: 'AVX2 C++ backend' },
             ].map(s => (
-              <div key={s.label} className="bg-gray-900/40 rounded-xl border border-gray-800 p-4 text-center">
+              <div key={s.label} className="surface-quiet rounded-md p-4 text-center">
                 <div className="text-2xl font-black text-emerald-400 font-mono">{s.value}</div>
                 <div className="text-sm font-semibold text-white mt-1">{s.label}</div>
                 <div className="text-xs text-gray-600">{s.sub}</div>

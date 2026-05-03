@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import type { StrategyMap } from '@/lib/types';
 import { probColor, pct, fmt } from '@/lib/utils';
+import { actionDisplay } from '@/lib/data';
 
 interface Props {
   strategy: StrategyMap;
@@ -10,21 +11,18 @@ interface Props {
   maxRows?: number;
 }
 
-const GAME_ACTIONS: Record<string, string[]> = {
-  kuhn:   ['Pass', 'Bet'],
-  leduc:  ['Fold', 'Chk/Call', 'Bet/Raise'],
-  holdem: ['Fold', 'Chk/Call', 'Bet33', 'Bet75', 'Bet100', 'Allin'],
-};
-
-export default function StrategyHeatmap({ strategy, game, maxRows = 50 }: Props) {
+export default function StrategyHeatmap({ strategy, maxRows = 50 }: Props) {
   const rows = useMemo(() => {
     const entries = Object.entries(strategy)
-      .slice(0, maxRows)
       .sort(([a], [b]) => a.localeCompare(b));
-    return entries;
+    return entries.slice(0, maxRows);
   }, [strategy, maxRows]);
 
-  const actions = GAME_ACTIONS[game] ?? ['A0', 'A1'];
+  const actions = useMemo(() => {
+    return Object.values(strategy).reduce<string[]>((best, node) => (
+      node.actions.length > best.length ? node.actions : best
+    ), []);
+  }, [strategy]);
 
   return (
     <div className="overflow-auto">
@@ -33,7 +31,7 @@ export default function StrategyHeatmap({ strategy, game, maxRows = 50 }: Props)
           <tr className="border-b border-gray-800">
             <th className="text-left py-2 px-3 text-gray-500 font-medium w-40">Infoset</th>
             {actions.map(a => (
-              <th key={a} className="py-2 px-2 text-gray-500 font-medium">{a}</th>
+              <th key={a} className="py-2 px-2 text-gray-500 font-medium">{actionDisplay(a)}</th>
             ))}
             <th className="py-2 px-2 text-gray-500 font-medium">Regret</th>
           </tr>

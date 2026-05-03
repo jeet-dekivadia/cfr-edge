@@ -2,7 +2,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import type { GameStrategy, GameType, StrategyMap } from '@/lib/types';
-import { loadAllAlgos, ACTION_LABELS } from '@/lib/data';
+import { actionDisplay, loadAllAlgos, ACTION_LABELS } from '@/lib/data';
 import { pct, fmt } from '@/lib/utils';
 
 const GAMES: { id: GameType; label: string }[] = [
@@ -28,21 +28,31 @@ function exportCSV(strategy: StrategyMap, game: GameType) {
 
 export default function StrategyPage() {
   const [allStrats, setAllStrats] = useState<Record<string, GameStrategy>>({});
+  const [loadedGame, setLoadedGame] = useState<GameType | null>(null);
   const [game, setGame] = useState<GameType>('kuhn');
   const [algo, setAlgo] = useState('DCFR');
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
   const [sortBy, setSortBy] = useState<'key' | 'regret' | 'entropy'>('key');
+  const loading = loadedGame !== game;
 
   useEffect(() => {
-    setLoading(true);
-    loadAllAlgos(game).then(s => {
-      setAllStrats(s);
-      setLoading(false);
-    });
+    let active = true;
+    loadAllAlgos(game)
+      .then(s => {
+        if (!active) return;
+        setAllStrats(s);
+        setLoadedGame(game);
+      })
+      .catch(err => {
+        if (!active) return;
+        console.error(err);
+        setAllStrats({});
+        setLoadedGame(game);
+      });
+    return () => { active = false; };
   }, [game]);
 
-  const currentStrat = allStrats[algo]?.final_strategy ?? {};
+  const currentStrat = useMemo(() => allStrats[algo]?.final_strategy ?? {}, [allStrats, algo]);
   const actions = ACTION_LABELS[game] ?? [];
 
   // Compute entropy for each infoset (measures how mixed the strategy is)
@@ -63,12 +73,13 @@ export default function StrategyPage() {
   }, [currentStrat, filter, sortBy]);
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-6">
+    <div className="min-h-screen bg-[#050806] text-white p-4 sm:p-6">
       <div className="max-w-7xl mx-auto">
 
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <h1 className="text-4xl font-black text-white mb-2">Strategy Explorer</h1>
-          <p className="text-gray-400">
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8 rounded-md border border-emerald-900/70 bg-[#07110a] p-5 sm:p-6">
+          <div className="font-mono text-xs uppercase tracking-[0.2em] text-emerald-300">Average Strategy Tables</div>
+          <h1 className="mt-2 mb-2 font-display text-5xl font-semibold text-emerald-50">Strategy Explorer</h1>
+          <p className="max-w-3xl text-gray-400">
             Browse every information set and its Nash equilibrium action probabilities.
           </p>
         </motion.div>
@@ -79,7 +90,7 @@ export default function StrategyPage() {
             {GAMES.map(g => (
               <button key={g.id} onClick={() => setGame(g.id)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  game === g.id ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30' : 'bg-gray-800 text-gray-400 hover:text-white'
+                  game === g.id ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30' : 'bg-[#07110a] text-gray-400 hover:text-white hover:bg-emerald-300/[0.08]'
                 }`}
               >{g.label}</button>
             ))}
@@ -89,7 +100,7 @@ export default function StrategyPage() {
             {['CFR', 'CFR+', 'DCFR'].map(a => (
               <button key={a} onClick={() => setAlgo(a)}
                 className={`px-3 py-2 rounded-lg text-xs font-mono transition-all ${
-                  algo === a ? 'bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/30' : 'bg-gray-800 text-gray-400 hover:text-white'
+                  algo === a ? 'bg-emerald-300/15 text-emerald-300 ring-1 ring-emerald-400/30' : 'bg-[#07110a] text-gray-400 hover:text-white hover:bg-emerald-300/[0.08]'
                 }`}
               >{a}</button>
             ))}
@@ -100,13 +111,13 @@ export default function StrategyPage() {
             placeholder="Filter infosets..."
             value={filter}
             onChange={e => setFilter(e.target.value)}
-            className="px-3 py-2 rounded-lg bg-gray-800 text-sm text-gray-300 placeholder-gray-600 border border-gray-700 focus:outline-none focus:border-emerald-500/50 w-48"
+            className="px-3 py-2 rounded-lg bg-[#07110a] text-sm text-gray-300 placeholder-gray-600 border border-emerald-900/70 focus:outline-none focus:border-emerald-500/50 w-48"
           />
 
           <select
             value={sortBy}
             onChange={e => setSortBy(e.target.value as 'key'|'regret'|'entropy')}
-            className="px-3 py-2 rounded-lg bg-gray-800 text-sm text-gray-300 border border-gray-700 focus:outline-none"
+            className="px-3 py-2 rounded-lg bg-[#07110a] text-sm text-gray-300 border border-emerald-900/70 focus:outline-none"
           >
             <option value="key">Sort: Key</option>
             <option value="regret">Sort: Max Regret ↓</option>
@@ -115,22 +126,22 @@ export default function StrategyPage() {
 
           <button
             onClick={() => exportCSV(currentStrat, game)}
-            className="px-4 py-2 rounded-lg text-xs font-mono border border-gray-700 text-gray-400 hover:text-white hover:border-emerald-500/40 transition-all ml-auto"
+            className="px-4 py-2 rounded-lg text-xs font-mono border border-emerald-900/70 text-gray-400 hover:text-white hover:border-emerald-500/40 transition-all ml-auto"
           >
             ↓ Export CSV
           </button>
         </div>
 
         {/* Stats bar */}
-        {allStrats[algo] && (
-          <div className="grid grid-cols-4 gap-3 mb-6">
+        {!loading && allStrats[algo] && (
+          <div className="grid grid-cols-2 gap-3 mb-6 lg:grid-cols-4">
             {[
               { label: 'Infosets', value: allStrats[algo].num_infosets.toLocaleString() },
               { label: 'Final Expl.', value: fmt(allStrats[algo].final_exploitability) },
               { label: 'Conv. Rate α', value: allStrats[algo].convergence_rate.toFixed(3) },
               { label: 'Solve time', value: `${allStrats[algo].elapsed_seconds?.toFixed(1) ?? '—'}s` },
             ].map(s => (
-              <div key={s.label} className="bg-gray-900/60 rounded-xl border border-gray-800 p-3 text-center">
+              <div key={s.label} className="surface-quiet rounded-md p-3 text-center">
                 <div className="text-lg font-black text-emerald-400 font-mono">{s.value}</div>
                 <div className="text-xs text-gray-500 mt-0.5">{s.label}</div>
               </div>
@@ -139,7 +150,7 @@ export default function StrategyPage() {
         )}
 
         {/* Table */}
-        <div className="bg-gray-900/60 rounded-2xl border border-gray-800 overflow-hidden">
+        <div className="surface rounded-md overflow-hidden">
           {loading ? (
             <div className="p-10 text-center text-gray-600">Loading strategies...</div>
           ) : (
@@ -149,7 +160,7 @@ export default function StrategyPage() {
                   <tr>
                     <th className="text-left py-3 px-4 text-gray-500 font-medium">Infoset</th>
                     {actions.map(a => (
-                      <th key={a} className="py-3 px-4 text-gray-500 font-medium text-center">{a}</th>
+                      <th key={a} className="py-3 px-4 text-gray-500 font-medium text-center">{actionDisplay(a)}</th>
                     ))}
                     <th className="py-3 px-4 text-gray-500 font-medium text-center">Entropy</th>
                     <th className="py-3 px-4 text-gray-500 font-medium text-center">Max |Regret|</th>
@@ -168,7 +179,9 @@ export default function StrategyPage() {
                         className="border-b border-gray-900 hover:bg-gray-800/30 transition-colors"
                       >
                         <td className="py-2 px-4 font-mono text-xs text-gray-300">{key}</td>
-                        {node.probs.map((p, ai) => (
+                        {actions.map((_, ai) => {
+                          const p = node.probs[ai] ?? 0;
+                          return (
                           <td key={ai} className="py-2 px-4 text-center">
                             <div className="relative h-5 flex items-center justify-center">
                               <div
@@ -178,7 +191,8 @@ export default function StrategyPage() {
                               <span className="relative text-xs font-mono text-gray-200">{pct(p)}</span>
                             </div>
                           </td>
-                        ))}
+                          );
+                        })}
                         <td className="py-2 px-4 text-center">
                           <span className="text-xs font-mono text-blue-400">{H.toFixed(3)}</span>
                         </td>

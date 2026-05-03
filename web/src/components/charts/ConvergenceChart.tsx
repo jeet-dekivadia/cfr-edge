@@ -51,9 +51,9 @@ export default function ConvergenceChart({ strategies, currentIter, logScale = t
     const yGrid = d3.axisLeft(yScale).ticks(5).tickSize(-(W - M.left - M.right)).tickFormat(() => '');
 
     svg.append('g').attr('class', 'grid').attr('transform', `translate(0,${H - M.bottom})`)
-      .call(xGrid).selectAll('line').style('stroke', '#1e293b').style('stroke-dasharray', '3,3');
+      .call(xGrid).selectAll('line').style('stroke', '#12351f').style('stroke-dasharray', '3,3');
     svg.append('g').attr('class', 'grid').attr('transform', `translate(${M.left},0)`)
-      .call(yGrid).selectAll('line').style('stroke', '#1e293b').style('stroke-dasharray', '3,3');
+      .call(yGrid).selectAll('line').style('stroke', '#12351f').style('stroke-dasharray', '3,3');
     svg.selectAll('.grid .domain').remove();
 
     // Axes
@@ -66,8 +66,8 @@ export default function ConvergenceChart({ strategies, currentIter, logScale = t
         : d3.axisLeft(yScale).ticks(5))
       .selectAll('text').style('fill', '#64748b').style('font-size', '11px');
 
-    svg.selectAll('.domain').style('stroke', '#334155');
-    svg.selectAll('.tick line').style('stroke', '#334155');
+    svg.selectAll('.domain').style('stroke', '#14532d');
+    svg.selectAll('.tick line').style('stroke', '#14532d');
 
     // Axis labels
     svg.append('text').attr('x', W/2).attr('y', H - 6)
@@ -85,7 +85,7 @@ export default function ConvergenceChart({ strategies, currentIter, logScale = t
       .y(t => yScale(Math.min(cBound / Math.sqrt(Math.max(t, 1)), yMax * 10)));
     const boundData = d3.range(1, xMax + 1, xMax / 200);
     svg.append('path').datum(boundData).attr('d', boundLine)
-      .style('stroke', '#334155').style('stroke-width', 1.5)
+      .style('stroke', '#14532d').style('stroke-width', 1.5)
       .style('stroke-dasharray', '6,4').style('fill', 'none').style('opacity', 0.5);
     svg.append('text').attr('x', W - M.right + 5).attr('y', yScale(cBound / Math.sqrt(xMax / 2)) - 5)
       .style('fill', '#475569').style('font-size', '9px').text('O(1/√T)');
@@ -125,7 +125,7 @@ export default function ConvergenceChart({ strategies, currentIter, logScale = t
       svg.append('line')
         .attr('x1', xScale(currentIter)).attr('x2', xScale(currentIter))
         .attr('y1', M.top).attr('y2', H - M.bottom)
-        .style('stroke', '#f59e0b').style('stroke-width', 1.5)
+        .style('stroke', '#34d399').style('stroke-width', 1.5)
         .style('stroke-dasharray', '4,3').style('opacity', 0.8);
 
       // Tooltip bubble for current iter
@@ -137,7 +137,7 @@ export default function ConvergenceChart({ strategies, currentIter, logScale = t
         svg.append('circle')
           .attr('cx', xScale(currentIter))
           .attr('cy', yScale(Math.max(closest.exploitability, 1e-8)))
-          .attr('r', 5).style('fill', '#f59e0b').style('opacity', 0.9);
+          .attr('r', 5).style('fill', '#34d399').style('opacity', 0.9);
       }
     }
   }, [allData, currentIter, logScale]);

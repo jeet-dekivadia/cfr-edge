@@ -1,7 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// @ts-nocheck  — R3F JSX elements (group, mesh, etc.) are not in the global
-// JSX.IntrinsicElements by default in Next.js 14's isolated type worker.
-// Type safety for Three.js scene nodes is enforced at runtime via R3F itself.
 'use client';
 import { Suspense, useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
@@ -62,36 +58,22 @@ function PokerScene() {
 
 // ── Oval table body ─────────────────────────────────────────────────────────
 function OvalTable() {
-  // Build the oval shape for extrusion
-  const shape = useMemo(() => {
-    const s = new THREE.Shape();
-    const rx = TABLE_RX + 0.5, rz = TABLE_RZ + 0.35;
-    s.absellipse(0, 0, rx, rz, 0, Math.PI * 2, false, 0);
-    return s;
-  }, []);
-
-  const feltShape = useMemo(() => {
-    const s = new THREE.Shape();
-    s.absellipse(0, 0, TABLE_RX, TABLE_RZ, 0, Math.PI * 2, false, 0);
-    return s;
-  }, []);
-
   return (
-    <group position={[0, -0.55, 0]}>
+    <group position={[0, -0.62, 0]}>
       {/* Wood rail */}
-      <mesh receiveShadow>
-        <extrudeGeometry args={[shape, { depth: 0.19, bevelEnabled: false }]} />
-        <meshStandardMaterial color="#5c3317" roughness={0.45} metalness={0.04} />
+      <mesh scale={[TABLE_RX + 0.55, 1, TABLE_RZ + 0.42]} receiveShadow castShadow>
+        <cylinderGeometry args={[1, 1, 0.24, 128]} />
+        <meshStandardMaterial color="#4a2712" roughness={0.48} metalness={0.05} />
       </mesh>
 
       {/* Green felt surface */}
-      <mesh position={[0, 0.19, 0]} receiveShadow>
-        <extrudeGeometry args={[feltShape, { depth: 0.04, bevelEnabled: false }]} />
-        <meshStandardMaterial color="#1b4d2e" roughness={0.88} />
+      <mesh position={[0, 0.15, 0]} scale={[TABLE_RX, 1, TABLE_RZ]} receiveShadow>
+        <cylinderGeometry args={[1, 1, 0.05, 128]} />
+        <meshStandardMaterial color="#34a866" roughness={0.74} emissive="#0b2f19" emissiveIntensity={0.16} />
       </mesh>
 
       {/* Gold trim ring along inner edge */}
-      <mesh position={[0, 0.2, 0]}>
+      <mesh position={[0, 0.19, 0]} rotation={[Math.PI / 2, 0, 0]} scale={[1, TABLE_RZ / TABLE_RX, 1]}>
         <torusGeometry args={[TABLE_RX, 0.055, 6, 96]} />
         <meshStandardMaterial color="#c9a227" roughness={0.28} metalness={0.75} />
       </mesh>
@@ -105,9 +87,9 @@ function OvalTable() {
       ))}
 
       {/* Felt logo / centre disc */}
-      <mesh position={[0, 0.24, 0]}>
+      <mesh position={[0, 0.205, 0]}>
         <cylinderGeometry args={[0.55, 0.55, 0.005, 48]} />
-        <meshStandardMaterial color="#153d24" roughness={0.95} />
+        <meshStandardMaterial color="#257946" roughness={0.86} emissive="#0d3d22" emissiveIntensity={0.12} />
       </mesh>
     </group>
   );
@@ -365,22 +347,22 @@ function ChipStack({
 function Lighting() {
   return (
     <>
-      <ambientLight intensity={0.28} />
+      <ambientLight intensity={0.72} />
       {/* Main overhead lamp — warm */}
       <spotLight
         position={[0, 7, 0]}
         angle={0.55}
         penumbra={0.4}
-        intensity={2.4}
+        intensity={4.8}
         color="#fff8e7"
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
       />
       {/* Fill lights from sides */}
-      <pointLight position={[-5, 3,  4]} intensity={0.5} color="#4fc3f7" />
-      <pointLight position={[ 5, 3, -4]} intensity={0.5} color="#a5d6a7" />
-      <pointLight position={[ 0, 2,  5]} intensity={0.35} color="#fff3e0" />
+      <pointLight position={[-5, 3,  4]} intensity={0.8} color="#7dd3fc" />
+      <pointLight position={[ 5, 3, -4]} intensity={1.15} color="#86efac" />
+      <pointLight position={[ 0, 2,  5]} intensity={0.62} color="#fff3e0" />
       {/* Subtle rim from below to lift the felt */}
       <pointLight position={[0, -1.5, 0]} intensity={0.15} color="#1b4d2e" />
     </>
@@ -391,13 +373,14 @@ function Lighting() {
 export default function PokerTableScene() {
   return (
     <Canvas
-      camera={{ position: [0, 6.5, 9], fov: 42 }}
+      camera={{ position: [0, 6.1, 8.2], fov: 45 }}
       shadows
       style={{ width: '100%', height: '100%' }}
-      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
+      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.55 }}
       dpr={[1, 2]}
     >
       <Suspense fallback={null}>
+        <color attach="background" args={['#06130a']} />
         <Lighting />
         <PokerScene />
         <OrbitControls
@@ -409,7 +392,7 @@ export default function PokerTableScene() {
           autoRotateSpeed={0.35}
           target={[0, -0.3, 0]}
         />
-        <fog attach="fog" args={['#020d07', 16, 36]} />
+        <fog attach="fog" args={['#03110a', 18, 42]} />
       </Suspense>
     </Canvas>
   );

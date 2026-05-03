@@ -18,6 +18,7 @@ module.exports = {
         },
       },
       fontFamily: {
+        display: ['var(--font-display)', 'Cormorant Garamond', 'Georgia', 'serif'],
         mono: ['var(--font-geist-mono)', 'JetBrains Mono', 'Consolas', 'monospace'],
         sans: ['var(--font-geist-sans)', 'Inter', 'system-ui', 'sans-serif'],
       },

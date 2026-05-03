@@ -9,8 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@react-three/drei": "^9.122.0",
-    "@react-three/fiber": "^8.17.10",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
     "@types/d3": "^7.4.3",
     "@types/katex": "^0.16.8",
     "@types/three": "^0.184.0",
@@ -21,18 +21,18 @@
     "framer-motion": "^12.38.0",
     "katex": "^0.16.45",
     "lucide-react": "^1.14.0",
-    "next": "^14.2.29",
+    "next": "^16.2.4",
     "postcss": "^8.5.13",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
     "react-katex": "^3.1.0",
     "recharts": "^3.8.1",
     "tailwind-merge": "^3.5.0",
-    "three": "^0.165.0",
+    "three": "^0.184.0",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
+    "@playwright/test": "^1.59.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -41,5 +41,8 @@
     "tailwindcss": "^3.4.17",
     "typescript": "^5"
   },
-  "description": "Poker GTO solver visualisation — CFR/CFR+/DCFR on Kuhn, Leduc, and Texas Holdem"
+  "overrides": {
+    "postcss": "^8.5.13"
+  },
+  "description": "Poker GTO solver visualization — CFR/CFR+/DCFR on Kuhn, Leduc, and Texas Hold'em"
 }

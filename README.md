@@ -4,9 +4,10 @@
   <img src="https://img.shields.io/badge/C%2B%2B-17-00599C?style=flat-square&logo=cplusplus&logoColor=white" alt="C++17" />
   <img src="https://img.shields.io/badge/CMake-3.16%2B-064F8C?style=flat-square&logo=cmake&logoColor=white" alt="CMake" />
   <img src="https://img.shields.io/badge/SIMD-AVX2%20%2F%20SSE2-76b900?style=flat-square&logo=nvidia&logoColor=white" alt="AVX2" />
-  <img src="https://img.shields.io/badge/Next.js-14-black?style=flat-square&logo=nextdotjs&logoColor=white" alt="Next.js 14" />
+  <img src="https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=nextdotjs&logoColor=white" alt="Next.js 16" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 19" />
   <img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
   <img src="https://img.shields.io/badge/Three.js-r165-black?style=flat-square&logo=threedotjs&logoColor=white" alt="Three.js" />
   <img src="https://img.shields.io/badge/D3.js-v7-F9A03C?style=flat-square&logo=d3dotjs&logoColor=white" alt="D3.js" />
   <img src="https://img.shields.io/badge/Algorithm-CFR%20%7C%20CFR%2B%20%7C%20DCFR-10b981?style=flat-square" alt="CFR Algorithms" />
@@ -109,7 +110,7 @@ For Texas Hold'em — where the game tree is astronomically large — we use Ext
 ```
 cfr-edge/
 ├── C++ engine          (include/ + src/)          ← solver, hand eval, MCCFR
-├── web/                                           ← Next.js 14 visualisation app
+├── web/                                           ← Next.js 16 visualisation app
 │   ├── src/app/                                   ← App Router pages
 │   ├── src/components/                            ← React components
 │   ├── src/lib/                                   ← Data loading, types, utilities
@@ -214,7 +215,7 @@ npm run build      # production build
 npm start          # serve production build
 ```
 
-**Requirements:** Node.js ≥ 18, npm ≥ 9. The app reads pre-computed strategy JSON from `web/public/strategies/` — no live solver connection required.
+**Requirements:** Node.js ≥ 20.9, npm ≥ 10. The app reads pre-computed strategy JSON from `web/public/strategies/` — no live solver connection required.
 
 ### Pages
 
@@ -313,7 +314,7 @@ cfr-edge/
 │   └── json_exporter.cpp   Standalone tool: runs all experiments, emits strategy
 │                           JSON bundles to web/public/strategies/
 │
-├── web/                    Next.js 14 · TypeScript · Tailwind CSS v4
+├── web/                    Next.js 16 · React 19 · TypeScript · Tailwind CSS v3
 │   ├── src/
 │   │   ├── app/            App Router pages (/, /solve, /play, /strategy,
 │   │   │                   /algorithm, /holdem)

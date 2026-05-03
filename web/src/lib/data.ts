@@ -61,9 +61,10 @@ export function getSnapshotAtIter(
 // Kuhn Poker game constants
 export const KUHN_CARDS = ['J', 'Q', 'K'] as const;
 export const KUHN_CARD_VALUES = { J: 0, Q: 1, K: 2 } as const;
+export type KuhnCard = typeof KUHN_CARDS[number];
 
 // Infoset key builder for Kuhn Poker
-export function kuhnInfoKey(card: 'J' | 'Q' | 'K', history: string): string {
+export function kuhnInfoKey(card: KuhnCard, history: string): string {
   return `${card}:${history}`;
 }
 
@@ -96,6 +97,87 @@ export function kuhnPayoff(p0Card: string, p1Card: string, history: string): num
   return 0;
 }
 
+export function isKuhnTerminal(history: string): boolean {
+  return history === 'pp' || history === 'bp' || history === 'bb' ||
+    history === 'pbp' || history === 'pbb';
+}
+
+export function kuhnPot(history: string): number {
+  return 2 + history.split('').filter(c => c === 'b').length;
+}
+
+export function kuhnHistoryLabel(history: string): string {
+  if (!history) return 'deal';
+  const labels: Record<string, string> = {
+    p: 'check',
+    b: 'bet',
+    pp: 'check / check',
+    bp: 'bet / fold',
+    bb: 'bet / call',
+    pb: 'check / bet',
+    pbp: 'check / bet / fold',
+    pbb: 'check / bet / call',
+  };
+  return labels[history] ?? history;
+}
+
+export function kuhnExpectedValue(
+  strategy: import('./types').StrategyMap,
+  p0Card: KuhnCard,
+  p1Card: KuhnCard,
+  history = '',
+  forcedRootAction?: number,
+): number {
+  if (isKuhnTerminal(history)) return kuhnPayoff(p0Card, p1Card, history);
+
+  const player = history.length % 2;
+  const card = player === 0 ? p0Card : p1Card;
+  const node = strategy[kuhnInfoKey(card, history)];
+  const probs = node?.probs ?? [0.5, 0.5];
+  const actionChars = ['p', 'b'];
+
+  if (forcedRootAction != null && player === 0) {
+    return kuhnExpectedValue(
+      strategy,
+      p0Card,
+      p1Card,
+      history + actionChars[forcedRootAction],
+    );
+  }
+
+  return probs.reduce((sum, prob, actionIdx) => (
+    sum + prob * kuhnExpectedValue(
+      strategy,
+      p0Card,
+      p1Card,
+      history + actionChars[actionIdx],
+    )
+  ), 0);
+}
+
+export function kuhnActionValues(
+  strategy: import('./types').StrategyMap,
+  playerCard: KuhnCard,
+  history: string,
+): { actionValues: number[]; nashValue: number; actionDelta: number[] } {
+  const possibleOppCards = KUHN_CARDS.filter(c => c !== playerCard);
+  const actionValues = [0, 1].map(actionIdx => (
+    possibleOppCards.reduce((sum, oppCard) => (
+      sum + kuhnExpectedValue(strategy, playerCard, oppCard, history, actionIdx)
+    ), 0) / possibleOppCards.length
+  ));
+
+  const node = strategy[kuhnInfoKey(playerCard, history)];
+  const probs = node?.probs ?? [0.5, 0.5];
+  const nashValue = actionValues.reduce((sum, value, i) => sum + value * (probs[i] ?? 0), 0);
+
+  return {
+    actionValues,
+    nashValue,
+    actionDelta: actionValues.map(value => value - nashValue),
+  };
+}
+
 // Leduc infoset key builder
 export function leducInfoKey(
   card: string,
@@ -107,27 +189,82 @@ export function leducInfoKey(
 
 // Human-readable action names per game
 export const ACTION_LABELS: Record<string, string[]> = {
-  kuhn:   ['Pass', 'Bet'],
-  leduc:  ['Fold', 'Check/Call', 'Bet/Raise'],
-  holdem: ['Fold', 'Check/Call', 'Bet 33%', 'Bet 75%', 'Bet 100%', 'All-in'],
+  kuhn:   ['pass', 'bet'],
+  leduc:  ['fold', 'check/call', 'bet/raise'],
+  holdem: ['fold', 'check/call', 'bet33', 'bet75', 'bet100', 'allin'],
 };
 
 // Color map for action types
 export const ACTION_COLORS: Record<string, string> = {
-  Pass: '#94a3b8',
-  Fold: '#ef4444',
-  Bet: '#22c55e',
-  'Check/Call': '#3b82f6',
-  'Bet/Raise': '#22c55e',
-  'Bet 33%': '#84cc16',
-  'Bet 75%': '#f59e0b',
-  'Bet 100%': '#f97316',
-  'All-in': '#ef4444',
+  pass: '#94a3b8',
+  fold: '#ef4444',
+  bet: '#22c55e',
+  'check/call': '#3b82f6',
+  'bet/raise': '#22c55e',
+  bet33: '#84cc16',
+  bet75: '#f59e0b',
+  bet100: '#f97316',
+  allin: '#ef4444',
 };
 
 export const ALGO_COLORS: Record<string, string> = {
-  CFR:    '#4e79a7',
-  'CFR+': '#f28e2b',
-  DCFR:   '#e15759',
-  CFR_SOA:'#76b7b2',
+  CFR:    '#6ee7b7',
+  'CFR+': '#22c55e',
+  DCFR:   '#a3e635',
+  CFR_SOA:'#34d399',
 };
+
+export function actionDisplay(action: string): string {
+  const labels: Record<string, string> = {
+    pass: 'Pass',
+    fold: 'Fold',
+    bet: 'Bet',
+    'check/call': 'Check / Call',
+    'bet/raise': 'Bet / Raise',
+    bet33: 'Bet 33%',
+    bet75: 'Bet 75%',
+    bet100: 'Bet 100%',
+    allin: 'All-in',
+  };
+  return labels[action] ?? action;
+}
+
+export const HOLDEM_RANKS = ['A','K','Q','J','T','9','8','7','6','5','4','3','2'] as const;
+
+function rankValue(rank: string): number {
+  return 12 - HOLDEM_RANKS.indexOf(rank as typeof HOLDEM_RANKS[number]);
+}
+
+export function holdemBucketForHand(label: string): number {
+  const first = label[0];
+  const second = label[1];
+  const high = Math.max(rankValue(first), rankValue(second));
+  const low = Math.min(rankValue(first), rankValue(second));
+
+  if (first === second) return 12 - high;
+
+  let idx = 0;
+  for (let h = 12; h > high; h--) idx += h;
+  idx += high - 1 - low;
+
+  return label.endsWith('s') ? 13 + idx : 91 + idx;
+}
+
+export function holdemHandForMatrixCell(row: number, col: number): {
+  label: string;
+  type: 'pair' | 'suited' | 'offsuit';
+  bucket: number;
+} {
+  if (row === col) {
+    const label = HOLDEM_RANKS[row] + HOLDEM_RANKS[col];
+    return { label, type: 'pair', bucket: holdemBucketForHand(label) };
+  }
+
+  if (col > row) {
+    const label = HOLDEM_RANKS[row] + HOLDEM_RANKS[col] + 's';
+    return { label, type: 'suited', bucket: holdemBucketForHand(label) };
+  }
+
+  const label = HOLDEM_RANKS[col] + HOLDEM_RANKS[row] + 'o';
+  return { label, type: 'offsuit', bucket: holdemBucketForHand(label) };
+}

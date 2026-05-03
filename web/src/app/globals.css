@@ -3,19 +3,30 @@
 @tailwind utilities;
 
 :root {
-  --felt-green: #1a472a;
-  --felt-dark:  #14381f;
+  --felt-green: #1f6f42;
+  --felt-dark:  #0c2f1a;
   --gold:       #d4af37;
   --chip-red:   #c62828;
   --chip-blue:  #1565c0;
   --chip-black: #212121;
+  --app-bg:     #050806;
+  --panel:      #07110a;
+  --line:       rgba(6, 95, 70, 0.72);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar       { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #0f172a; }
-::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #475569; }
+::-webkit-scrollbar-track { background: #050806; }
+::-webkit-scrollbar-thumb { background: #14532d; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #166534; }
 
 /* Card shine effect */
 .card-shine {
@@ -25,7 +36,9 @@
 
 /* Felt texture */
 .felt {
-  background: radial-gradient(ellipse at center, #1a472a 0%, #0f2d1a 100%);
+  background:
+    linear-gradient(120deg, rgba(255,255,255,0.045), transparent 35%),
+    radial-gradient(ellipse at center, #1f6f42 0%, #0c2f1a 100%);
 }
 
 /* Probability bar transition */
@@ -42,7 +55,23 @@
 
 /* Chart tooltip */
 .chart-tooltip {
-  background: rgba(15, 23, 42, 0.95);
-  border: 1px solid rgba(51, 65, 85, 0.8);
+  background: rgba(5, 8, 6, 0.95);
+  border: 1px solid rgba(6, 95, 70, 0.8);
   backdrop-filter: blur(8px);
+}
+
+.surface {
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(180deg, rgba(34,197,94,0.08), rgba(34,197,94,0.025)),
+    var(--panel);
+}
+
+.surface-quiet {
+  border: 1px solid rgba(6, 95, 70, 0.58);
+  background: rgba(7, 17, 10, 0.78);
+}
+
+.text-balance {
+  text-wrap: balance;
 }
