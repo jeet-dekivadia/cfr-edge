@@ -13,7 +13,7 @@
 //   Pre-flop:  169 canonical hand classes (suit isomorphism)
 //   Post-flop: EHS² bucketed into NUM_POSTFLOP_BUCKETS bins
 //
-// MCCFR variant: External Sampling — only sample one deal per iteration,
+// MCCFR variant: External Sampling - only sample one deal per iteration,
 // traverse the acting player's subtree completely, sample opponent actions.
 
 #include "infoset.h"
@@ -58,7 +58,7 @@ int preflop_bucket(int c0, int c1);
 
 // Map hole cards + board to a post-flop EHS² bucket (0..NUM_POSTFLOP_BUCKETS-1).
 // EHS = Expected Hand Strength (equity vs uniform random opponent range).
-// EHS² = (EHS)² — captures both average and variance of equity.
+// EHS² = (EHS)² - captures both average and variance of equity.
 int postflop_bucket(int c0, int c1, const int board[], int board_count);
 
 // String representation of a preflop bucket (e.g., "AKs", "QQ", "72o")

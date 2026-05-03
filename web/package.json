@@ -44,5 +44,5 @@
   "overrides": {
     "postcss": "^8.5.13"
   },
-  "description": "Poker GTO solver visualization — CFR/CFR+/DCFR on Kuhn, Leduc, and Texas Hold'em"
+  "description": "Poker GTO solver visualization - CFR/CFR+/DCFR on Kuhn, Leduc, and Texas Hold'em"
 }

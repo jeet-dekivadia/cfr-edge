@@ -137,7 +137,7 @@ static double br_traverse(
     const char ac[] = {'p', 'b'};
 
     if (player == br_player) {
-        // Group by the BR player's private card — each group is one infoset.
+        // Group by the BR player's private card - each group is one infoset.
         // Within a group, pick ONE best action (the max over the summed value).
         std::unordered_map<int, std::vector<DealState>> by_card;
         for (const auto& s : states) {
@@ -159,7 +159,7 @@ static double br_traverse(
     } else {
         // Opponent follows average strategy.
         // Each deal may have a different infoset (different private card) and
-        // therefore a different mixed strategy — handle per-state.
+        // therefore a different mixed strategy - handle per-state.
         std::vector<DealState> child[NUM_ACTIONS];
         for (const auto& s : states) {
             int card = (player == 0) ? s.p0_card : s.p1_card;

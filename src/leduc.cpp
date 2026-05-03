@@ -146,7 +146,7 @@ double cfr_traverse(InfoMap& nodes,
 //
 // Process all deals simultaneously so that infoset-consistent BR strategies
 // are enforced. Deals sharing the same infoset (same private card + board)
-// must use the SAME action — enforced by grouping before picking max.
+// must use the SAME action - enforced by grouping before picking max.
 
 struct LeDealState {
     int p0_card, p1_card, board;

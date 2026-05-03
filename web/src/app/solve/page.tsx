@@ -154,7 +154,7 @@ export default function SolvePage() {
                 />
               )}
 
-              {/* Iteration scrubber — only shown when snapshots exist */}
+              {/* Iteration scrubber - only shown when snapshots exist */}
               {!loading && dcfrStrat && hasSnaps && (
                 <div className="mt-4 space-y-3">
                   <div className="flex items-center gap-3">
@@ -208,10 +208,10 @@ export default function SolvePage() {
                 </div>
               )}
 
-              {/* Holdem: no snapshot scrubber — show a note instead */}
+              {/* Holdem: no snapshot scrubber - show a note instead */}
               {!loading && game === 'holdem' && (
                 <p className="mt-3 text-xs text-gray-600">
-                  Texas Hold&apos;em uses MCCFR — strategy snapshots are not available
+                  Texas Hold&apos;em uses MCCFR - strategy snapshots are not available
                   (tree too large to checkpoint). Convergence curve shows exploitability proxy.
                 </p>
               )}
@@ -288,7 +288,7 @@ export default function SolvePage() {
               { label: 'Infosets',      value: (dcfrStrat.num_infosets ?? 0).toLocaleString(), sub: 'unique decision points' },
               { label: 'Final Expl.',   value: fmt(dcfrStrat.final_exploitability ?? 0),        sub: 'ε at Nash = 0' },
               { label: 'Convergence α', value: (dcfrStrat.convergence_rate ?? 0).toFixed(3),   sub: 'ε ~ C · T⁻ᵅ' },
-              { label: 'Solve time',    value: dcfrStrat.elapsed_seconds != null ? `${dcfrStrat.elapsed_seconds.toFixed(1)}s` : '—', sub: 'AVX2 C++ backend' },
+              { label: 'Solve time',    value: dcfrStrat.elapsed_seconds != null ? `${dcfrStrat.elapsed_seconds.toFixed(1)}s` : '-', sub: 'AVX2 C++ backend' },
             ].map(s => (
               <div key={s.label} className="surface-quiet rounded-md p-4 text-center">
                 <div className="text-2xl font-black text-emerald-400 font-mono">{s.value}</div>

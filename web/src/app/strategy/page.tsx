@@ -139,7 +139,7 @@ export default function StrategyPage() {
               { label: 'Infosets', value: allStrats[algo].num_infosets.toLocaleString() },
               { label: 'Final Expl.', value: fmt(allStrats[algo].final_exploitability) },
               { label: 'Conv. Rate α', value: allStrats[algo].convergence_rate.toFixed(3) },
-              { label: 'Solve time', value: `${allStrats[algo].elapsed_seconds?.toFixed(1) ?? '—'}s` },
+              { label: 'Solve time', value: `${allStrats[algo].elapsed_seconds?.toFixed(1) ?? '-'}s` },
             ].map(s => (
               <div key={s.label} className="surface-quiet rounded-md p-3 text-center">
                 <div className="text-lg font-black text-emerald-400 font-mono">{s.value}</div>

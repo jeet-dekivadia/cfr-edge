@@ -20,7 +20,7 @@ try:
     HAS_MPL = True
 except ImportError:
     HAS_MPL = False
-    print("matplotlib not found — text summary only. pip install matplotlib to enable plots.")
+    print("matplotlib not found - text summary only. pip install matplotlib to enable plots.")
 
 
 COLORS = {
@@ -76,7 +76,7 @@ def plot_curves(curves, title, outpath, nash_ref=None):
 
         ax.set_xlabel('Iteration', fontsize=11)
         ax.set_ylabel('Exploitability', fontsize=11)
-        ax.set_title(f'{title} — {"linear" if yscale == "linear" else "log"} scale',
+        ax.set_title(f'{title} - {"linear" if yscale == "linear" else "log"} scale',
                      fontsize=12)
         ax.set_yscale(yscale)
         ax.legend(fontsize=9)
@@ -111,17 +111,17 @@ def main():
 
     files = {
         'kuhn_convergence.csv': (
-            'Kuhn Poker — CFR/CFR+/DCFR Convergence',
+            'Kuhn Poker - CFR/CFR+/DCFR Convergence',
             'kuhn_convergence.png',
             0.0,   # Nash exploitability = 0
         ),
         'leduc_convergence.csv': (
-            "Leduc Hold'em — CFR/CFR+/DCFR Convergence",
+            "Leduc Hold'em - CFR/CFR+/DCFR Convergence",
             'leduc_convergence.png',
             None,
         ),
         'abstraction_comparison.csv': (
-            'Leduc — Abstraction Scheme Comparison',
+            'Leduc - Abstraction Scheme Comparison',
             'abstraction_comparison.png',
             None,
         ),
@@ -131,7 +131,7 @@ def main():
     for csv_name, (title, png_name, nash_ref) in files.items():
         csv_path = os.path.join(results_dir, csv_name)
         if not os.path.exists(csv_path):
-            print(f"  skipping {csv_name} (not found — run the solver first)")
+            print(f"  skipping {csv_name} (not found - run the solver first)")
             continue
         found_any = True
         curves = read_csv(csv_path)

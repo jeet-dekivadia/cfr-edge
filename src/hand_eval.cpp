@@ -12,7 +12,7 @@ namespace cfr {
 namespace handeval {
 
 // ============================================================
-// 5-card hand evaluator — Senzee/Cactus-Kev approach.
+// 5-card hand evaluator - Senzee/Cactus-Kev approach.
 // Each hand is classified by its 13-bit rank bitmap (for flushes
 // and unique-rank hands) or by a prime-product hash (for paired hands).
 //
@@ -49,7 +49,7 @@ static constexpr uint16_t STRAIGHTS[10] = {
     0x007C, // 87654
     0x003E, // 76543
     0x001F, // 65432
-    0x100F, // A5432 (wheel) — Ace is bit 12, 5432 bits 0-3
+    0x100F, // A5432 (wheel) - Ace is bit 12, 5432 bits 0-3
 };
 
 // The unique-5 values are 5-card hands with 5 distinct ranks and no flush.
@@ -108,7 +108,7 @@ static int rank_unique5(const int ranks[5]) {
       - C(sr[2]+1,3) + C(sr[2],3)
       - C(sr[1]+1,2) + C(sr[1],2)
       - C(sr[0]+1,1) + C(sr[0],1);
-    // This isn't right — just use a simpler encoding for demo purposes.
+    // This isn't right - just use a simpler encoding for demo purposes.
     // Encode as 5-digit base-13 number and scale to [6186..7461].
     // We want higher ranks → lower (stronger) hand value in our scheme.
     // The best high-card hand is A-K-Q-J-9 (rank 6186).

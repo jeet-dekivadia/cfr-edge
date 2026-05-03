@@ -52,7 +52,7 @@ find_package(OpenMP QUIET)
 if(OpenMP_CXX_FOUND)
     target_link_libraries(cfr_solver PUBLIC OpenMP::OpenMP_CXX)
     target_compile_definitions(cfr_solver PRIVATE HAS_OPENMP=1)
-    message(STATUS "OpenMP found — parallel deal traversal enabled")
+    message(STATUS "OpenMP found - parallel deal traversal enabled")
 endif()
 
 # ---- JSON output tool (standalone, same sources minus main) ----

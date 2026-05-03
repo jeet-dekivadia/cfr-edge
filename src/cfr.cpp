@@ -95,7 +95,7 @@ TrainResult run_training(const TrainConfig& config) {
     auto t0 = std::chrono::high_resolution_clock::now();
 
     if (!config.use_soa) {
-        // AoS path — delegates to game-specific train()
+        // AoS path - delegates to game-specific train()
         InfoMap nodes;
         std::vector<std::pair<int,double>> curve;
 
@@ -141,7 +141,7 @@ TrainResult run_training(const TrainConfig& config) {
                     // NORMALIZED probability vector (sums to 1.0).  We store it
                     // in nd.strategy_sum; InfoNode::get_average_strategy() will
                     // normalise by the sum (== 1.0) and return the same values.
-                    // This is intentionally a lightweight snapshot — we never
+                    // This is intentionally a lightweight snapshot - we never
                     // accumulate regrets into these tmp nodes.
                     InfoMap tmp;
                     for (const auto& [key, loc] : store.all_keys()) {

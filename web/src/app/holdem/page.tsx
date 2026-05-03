@@ -113,7 +113,7 @@ export default function HoldemPage() {
 
   const hoveredData = hoveredCell ? matrix[hoveredCell.row][hoveredCell.col] : null;
 
-  // Aggregate stats — derived from preflop_summary (final_strategy is stripped from holdem JSON)
+  // Aggregate stats - derived from preflop_summary (final_strategy is stripped from holdem JSON)
   const stats = useMemo(() => {
     if (!strategy) return null;
     const pf = Object.values(strategy.preflop_summary ?? {});

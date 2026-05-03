@@ -219,7 +219,7 @@ double mccfr_traverse(InfoMap& nodes,
         // Working backwards: length of history before 'f' gives us the acting player.
         // The fold was the PREVIOUS action; we're now at the terminal node.
         // Return utility from traverser's perspective.
-        // The folding player is NOT the traverser in the recursive call context —
+        // The folding player is NOT the traverser in the recursive call context -
         // we handle fold returns inline in the action loop below.
         // This branch is only reached if history ends in 'f' AND it's a terminal.
         // Payoff: the player who folded loses what they put in; other wins the pot.
@@ -552,7 +552,7 @@ double holdem_exploitability_estimate(const InfoMap& nodes, int num_samples) {
 // ---- Print strategy ----
 
 void print_holdem_strategy(const InfoMap& nodes) {
-    std::cout << "\nTexas Hold'em (MCCFR) — Pre-flop Strategy Sample:\n";
+    std::cout << "\nTexas Hold'em (MCCFR) - Pre-flop Strategy Sample:\n";
     std::cout << std::fixed << std::setprecision(3);
     std::vector<std::string> keys;
     keys.reserve(nodes.size());

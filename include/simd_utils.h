@@ -20,7 +20,7 @@
 #endif
 
 // AVX2: available when compiler explicitly enables it (-mavx2 / /arch:AVX2).
-// Note: do NOT assume AVX2 from _M_X64 — that only guarantees SSE2.
+// Note: do NOT assume AVX2 from _M_X64 - that only guarantees SSE2.
 #if defined(__AVX2__)
     #define HAS_AVX2 1
     #include <immintrin.h>

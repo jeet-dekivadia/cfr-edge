@@ -88,7 +88,7 @@ void get_abstracted_actions(int num_bets, const std::string& round_hist,
     }
 }
 
-// ---- Shared game-tree helpers — delegated to leduc_utils.h ----
+// ---- Shared game-tree helpers - delegated to leduc_utils.h ----
 
 static inline int acting_player_round(const std::string& rh) {
     return leduc::acting_player_in_round(rh);
@@ -313,7 +313,7 @@ static double abstract_br_traverse(
 }
 
 // Exploitability within the abstract game (uses abstract infoset keys for
-// both training and BR evaluation — correctly measures convergence).
+// both training and BR evaluation - correctly measures convergence).
 static double abstract_exploitability(const InfoMap& abstract_nodes,
                                        const AbstractConfig& cfg) {
     auto deals = leduc::all_deals();

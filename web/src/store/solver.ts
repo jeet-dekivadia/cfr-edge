@@ -99,7 +99,7 @@ export const useSolverStore = create<SolverState>((set, get) => ({
     if (nextSnap) {
       get().setIteration(nextSnap);
     } else {
-      // Reached end — stop
+      // Reached end - stop
       get().setIteration(maxIter);
       set({ isPlaying: false });
     }

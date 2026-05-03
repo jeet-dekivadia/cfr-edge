@@ -16,7 +16,7 @@ namespace cfr {
 //           Positive regrets discounted by t^α/(t^α+1) each iteration (α=1.5).
 //           Negative regrets floored to 0 at each step (β = -∞ variant, which
 //           converges empirically faster than the paper's β=0 formulation).
-//           Strategy-sum weighted by t^γ (γ=2) — quadratic weighting.
+//           Strategy-sum weighted by t^γ (γ=2) - quadratic weighting.
 //           Net effect: ~100× faster convergence to ε-Nash vs vanilla CFR.
 enum class Mode { CFR, CFR_PLUS, DCFR };
 

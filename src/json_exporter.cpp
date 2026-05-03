@@ -318,7 +318,7 @@ int main(int argc, char** argv) {
     }
 
     // ============================================================
-    // meta.json — index for the frontend
+    // meta.json - index for the frontend
     // ============================================================
     meta["generated_at"] = "2026-04-30";
     meta["version"]      = "2.0";

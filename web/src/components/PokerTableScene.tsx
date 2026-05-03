@@ -22,7 +22,7 @@ function seatPosition(angle: number, rx = TABLE_RX, rz = TABLE_RZ): [number, num
 
 // Card suits & ranks cycling per seat for visual variety
 const SEAT_CARDS: [string, string][] = [
-  ['A', '♠'],   // hero — strong hand
+  ['A', '♠'],   // hero - strong hand
   ['K', '♥'],
   ['7', '♦'],
   ['Q', '♣'],
@@ -78,7 +78,7 @@ function OvalTable() {
         <meshStandardMaterial color="#c9a227" roughness={0.28} metalness={0.75} />
       </mesh>
 
-      {/* Table legs — 4 positioned under the oval */}
+      {/* Table legs - 4 positioned under the oval */}
       {([[-2.4, -2.4], [2.4, -2.4], [2.4, 2.4], [-2.4, 2.4]] as [number,number][]).map(([x, z], i) => (
         <mesh key={i} position={[x, -1.1, z]}>
           <cylinderGeometry args={[0.1, 0.14, 2.0, 8]} />
@@ -112,7 +112,7 @@ function CommunityCards() {
           phase={i * 0.4}
         />
       ))}
-      {/* "FLOP" label — thin dark plane */}
+      {/* "FLOP" label - thin dark plane */}
       <mesh position={[0, -0.025, 0.42]}>
         <planeGeometry args={[1.1, 0.12]} />
         <meshStandardMaterial color="#0a1f12" roughness={1} transparent opacity={0.6} />
@@ -169,7 +169,7 @@ function PlayerSeat({ angle, seatIndex }: { angle: number; seatIndex: number }) 
         small
       />
 
-      {/* Seat glow ring — hero gets green, active seats get dim amber */}
+      {/* Seat glow ring - hero gets green, active seats get dim amber */}
       <mesh position={[0, -0.06, 0]}>
         <torusGeometry args={[0.38, 0.025, 6, 32]} />
         <meshStandardMaterial
@@ -263,12 +263,12 @@ function FloatingCard({
 
       {faceUp && rank && (
         <>
-          {/* Rank pip — coloured disc in top-left */}
+          {/* Rank pip - coloured disc in top-left */}
           <mesh position={[-0.1, 0.17, 0.007]}>
             <circleGeometry args={[0.055, 24]} />
             <meshStandardMaterial color={suitColor} />
           </mesh>
-          {/* Rank pip — bottom-right (mirrored) */}
+          {/* Rank pip - bottom-right (mirrored) */}
           <mesh position={[0.1, -0.17, 0.007]}>
             <circleGeometry args={[0.055, 24]} />
             <meshStandardMaterial color={suitColor} />
@@ -281,7 +281,7 @@ function FloatingCard({
         </>
       )}
 
-      {/* Face-down pattern — diagonal lines */}
+      {/* Face-down pattern - diagonal lines */}
       {!faceUp && (
         <>
           <mesh position={[0, 0, 0.007]} rotation={[0, 0, Math.PI * 0.25]}>
@@ -332,7 +332,7 @@ function ChipStack({
             <torusGeometry args={[r * 0.95, h * 0.18, 4, 20]} />
             <meshStandardMaterial color="#ffffff" roughness={0.5} opacity={0.35} transparent />
           </mesh>
-          {/* Top face — slightly lighter */}
+          {/* Top face - slightly lighter */}
           <mesh position={[0, h / 2, 0]}>
             <circleGeometry args={[r * 0.88, 20]} />
             <meshStandardMaterial color={color} roughness={0.2} metalness={0.2} emissive={color} emissiveIntensity={0.08} />
@@ -348,7 +348,7 @@ function Lighting() {
   return (
     <>
       <ambientLight intensity={0.72} />
-      {/* Main overhead lamp — warm */}
+      {/* Main overhead lamp - warm */}
       <spotLight
         position={[0, 7, 0]}
         angle={0.55}
