@@ -1,88 +1,54 @@
 # CFR-Edge
 
-A production-grade Counterfactual Regret Minimization engine for poker, with a full-stack interactive visualisation platform.
+A C++17 poker solver for Counterfactual Regret Minimization, with a lightweight Next.js front end for exploring the results.
 
-CFR-Edge implements three generations of the CFR algorithm family: Vanilla CFR, CFR+, and Discounted CFR (DCFR). The solver is written in AVX2-accelerated C++17, and the results are exposed through a Next.js web application that lets users watch strategies converge to Nash equilibrium in real time, play against the solved strategy, and explore every information set in depth.
+The codebase centers on three CFR variants, Vanilla CFR, CFR+, and DCFR, with support for Kuhn Poker, Leduc Hold'em, and Heads-Up No-Limit Texas Hold'em through Monte Carlo CFR with external sampling.
 
-Games supported: Kuhn Poker, Leduc Hold'em, and Heads-Up No-Limit Texas Hold'em using Monte Carlo CFR with external sampling.
+## Project Metrics
+
+| Area | Result |
+|------|--------|
+| Kuhn Poker DCFR | Final exploitability: 4.41 × 10⁻⁴ at 10,000 iterations |
+| Leduc Hold'em DCFR | Final exploitability: 7.54 × 10⁻³ at 10,000 iterations |
+| SIMD backend | AVX2 path reaches 4 doubles per cycle |
+| Strategy export | JSON bundles generated for the web app |
 
 ## Table of Contents
 
-1. Background
-2. Algorithms
-3. Architecture
-4. C++ Engine
-5. Web Application
-6. Project Structure
-7. Results
-8. References
+1. [Background](#background)
+2. [C++ Engine](#c-engine)
+   - [Build](#build)
+   - [Solver Modes](#solver-modes)
+   - [Outputs](#outputs)
+3. [Web Application](#web-application)
+4. [Project Structure](#project-structure)
+5. [References](#references)
 
 ## Background
 
-Counterfactual Regret Minimization (CFR) is an iterative self-play algorithm for computing Nash equilibria in extensive-form games with imperfect information. It was introduced by Zinkevich et al. (2007) and has since become the foundational algorithm for computer poker research, most notably in Libratus (2017) and Pluribus (2019), which defeated professional human players at heads-up and multi-player Texas Hold'em.
-
-The key insight is that in a zero-sum two-player game, the time-average strategy profile converges to a Nash equilibrium at a rate of O(T^{-1/2}). More recent variants, such as CFR+ and DCFR, achieve significantly faster empirical convergence by discounting early, high-variance regret estimates.
-
-This project implements the full algorithm family from scratch in C++17, verifies convergence via exact best-response exploitability computation, and wraps the results in an interactive web interface designed to make the underlying mathematics tangible and explorable.
-
-## Algorithms
-
-### Vanilla CFR
-
-At each iteration, the solver traverses the full game tree. For each information set I and action a, it accumulates counterfactual regret as the difference between the value of taking action a and the value of following the current strategy, weighted by the opponent reach probability.
-
-The strategy is updated via regret matching, where actions are played proportional to their positive cumulative regrets. The time-average strategy converges to Nash at rate O(Δ sqrt(|I|) / sqrt(T)).
-
-### CFR+
-
-CFR+ floors regrets at zero after each update, weights strategy sums linearly by iteration number, and converges faster in practice than vanilla CFR.
-
-### DCFR
-
-Brown and Sandholm (2019) discount positive regrets before each iteration using a factor of t^α / (t^α + 1), with α = 1.5. Negative regrets are floored to zero in this implementation, and strategy sums use quadratic weighting. In this project, DCFR delivers the strongest empirical convergence on Kuhn Poker.
-
-| Algorithm | Regret weight | Strategy weight | Empirical α in ε ~ C·T^{-α} |
-|-----------|---------------|-----------------|-------------------------------|
-| CFR | 1 (uniform) | 1 (uniform) | ~0.53 |
-| CFR+ | max(R, 0) | t (linear) | ~0.50 |
-| DCFR | t^1.5 / (t^1.5 + 1) x max(R, 0) | t² (quadratic) | ~0.61 |
-
-### Monte Carlo CFR
-
-For Texas Hold'em, where the game tree is extremely large, the project uses External Sampling MCCFR.
-
-- One deal is sampled per iteration.
-- The traversing player evaluates all actions.
-- The opponent samples one action proportional to the current strategy.
-- This reduces per-iteration complexity substantially compared with full-tree traversal.
-
-## Architecture
-
-The repository is split into a C++ engine, a web application, and supporting scripts.
-
-- C++ engine in include/ and src/ for solver logic, hand evaluation, and MCCFR.
-- Next.js application in web/ for visualisation, exploration, and gameplay.
-- Scripts in scripts/ for convergence plotting.
-- Generated strategy bundles in web/public/strategies/ for static consumption by the app.
-
-The C++ solver generates JSON strategy bundles with convergence curves and per-infoset strategy snapshots at multiple iteration checkpoints. The web app serves them as static assets, so it does not require a backend server.
+Counterfactual Regret Minimization is the core algorithm used throughout this project. The emphasis here is on the solver implementation, the strategy export pipeline, and the evaluation tooling around it.
 
 ## C++ Engine
 
-The engine includes implementations for Kuhn Poker, Leduc Hold'em, Texas Hold'em abstractions, best-response evaluation, hand evaluation, and JSON export. It also includes SIMD helpers and a structure-of-arrays store for faster batch processing.
+The C++ side is the primary focus of the repository. It includes the game trees, regret update logic, best-response evaluation, abstraction helpers, hand evaluation, JSON export, and the SIMD and SoA utilities used to accelerate batch strategy computation.
 
-Compiler support is centered on C++17, with AVX2 and SSE2 paths when available. The build is designed to fetch nlohmann/json automatically at configure time.
+The engine is organized so the same solver infrastructure can handle small exact games like Kuhn Poker, richer abstractions like Leduc Hold'em, and external-sampling MCCFR for Texas Hold'em.
+
+### Build
+
+The project uses CMake and a C++17 compiler. A Release build enables the optimized execution paths used by the solver and exporter binaries.
+
+### Solver Modes
+
+The main solver entry point runs the training experiments for Kuhn Poker, Leduc Hold'em, and Texas Hold'em, with flags for focusing on a single game or skipping specific experiment groups. A separate JSON exporter binary writes the precomputed strategy bundles consumed by the web app.
+
+### Outputs
+
+The solver writes CSV convergence data into results/ and strategy JSON bundles into web/public/strategies/. Those exports are the main integration point between the C++ engine and the front end.
 
 ## Web Application
 
-The web app is a Next.js 16 and React 19 interface with Tailwind CSS styling. It consumes the pre-computed strategy bundles from web/public/strategies/ and presents several views:
-
-- Home: a cinematic landing page with a 3D poker table scene.
-- Live Solver Dashboard: convergence charts, iteration scrubbing, strategy heatmaps, and replay playback.
-- Play vs Nash: an interactive Kuhn Poker game against the solved strategy.
-- Strategy Explorer: a sortable and filterable table of information sets.
-- CFR Demystified: an interactive walkthrough of the algorithm.
-- Texas Hold'em GTO: a preflop range explorer with abstraction and strategy summaries.
+The web app is intentionally slimmer than the solver. It loads the precomputed strategy bundles and provides a few focused views for browsing convergence, comparing strategies, and playing against the solved Kuhn Poker policy.
 
 ## Project Structure
 
@@ -93,40 +59,6 @@ The web app is a Next.js 16 and React 19 interface with Tailwind CSS styling. It
 | web/ | Next.js application, components, state, and static strategy assets |
 | scripts/ | Analysis and plotting scripts |
 | results/ | CSV and plot outputs generated by experiments |
-
-## Results
-
-### Exploitability at Convergence
-
-| Game | Algorithm | Iterations | Final ε | Conv. Rate α |
-|------|-----------|-----------|---------|--------------|
-| Kuhn Poker | CFR | 10,000 | 1.49 × 10⁻³ | 0.532 |
-| Kuhn Poker | CFR+ | 10,000 | 1.59 × 10⁻³ | 0.496 |
-| Kuhn Poker | DCFR | 10,000 | 4.41 × 10⁻⁴ | 0.605 |
-| Leduc Hold'em | CFR | 10,000 | 3.83 × 10⁻³ | 0.549 |
-| Leduc Hold'em | CFR+ | 10,000 | 7.87 × 10⁻³ | 0.480 |
-| Leduc Hold'em | DCFR | 10,000 | 7.54 × 10⁻³ | 0.497 |
-| Texas Hold'em | MCCFR-DCFR | 1,000 | proxy | proxy |
-
-Exploitability is defined as the average best-response gap per player: ε = (BR₀ + BR₁) / 2, where BRᵢ is the expected gain of a best response against the opponent's average strategy. At Nash equilibrium, ε = 0.
-
-### Kuhn Poker Nash Strategy
-
-The known analytic Nash for Kuhn Poker requires K to always bet, J to bluff with frequency near one third of K's betting frequency, and Q to check most of the time while mixing on calls. The learned DCFR strategy converges closely to the analytic solution.
-
-### SIMD Performance
-
-| Backend | Throughput | Relative |
-|---------|------------|----------|
-| Scalar | 1 double/cycle | 1x |
-| SSE2 | 2 doubles/cycle | 2x |
-| AVX2 | 4 doubles/cycle | 4x |
-
-## Technical Notes
-
-The project keeps two CFR paths. The default Array-of-Structures path uses std::unordered_map<string, InfoNode> and computes strategies during traversal, while the Structure-of-Arrays path pre-computes strategies at the start of each iteration and freezes them for the remainder of that iteration. The SoA path is currently implemented for Kuhn Poker only.
-
-The Texas Hold'em abstraction uses 169 canonical starting-hand classes, eight postflop hand-strength buckets, and a six-action cap for tractability. This keeps the demonstration manageable while still showing how abstraction and external sampling interact.
 
 ## References
 
