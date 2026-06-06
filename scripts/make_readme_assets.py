@@ -128,8 +128,9 @@ def kuhn_strategy_plot():
     order = [k for k in order if k in fs]
 
     fig, ax = plt.subplots(figsize=(9.2, 5.6))
-    fig.subplots_adjust(left=0.27, right=0.96, top=0.82, bottom=0.1)
+    fig.subplots_adjust(left=0.26, right=0.90, top=0.81, bottom=0.11)
     ax.set_facecolor(PANEL)
+    cx = 0.58  # horizontal centre of the plotting axes, for the heading
 
     y = np.arange(len(order))[::-1]
     for yi, key in zip(y, order):
@@ -152,12 +153,12 @@ def kuhn_strategy_plot():
     ax.set_axisbelow(True)
     ax.xaxis.grid(True, color=GRID, lw=0.7)
 
-    fig.text(0.27, 0.94, "Kuhn Poker equilibrium  (DCFR average strategy)",
-             fontsize=17, fontweight="bold", color=TEXT)
-    fig.text(0.27, 0.895,
+    fig.text(cx, 0.94, "Kuhn Poker equilibrium  (DCFR average strategy)",
+             fontsize=17, fontweight="bold", color=TEXT, ha="center")
+    fig.text(cx, 0.895,
              "Grey = pass / check / fold,    green = bet / call.    "
              "Note the Jack's 25% bluff.",
-             fontsize=10.5, color=MUTED)
+             fontsize=10.5, color=MUTED, ha="center")
     fig.savefig(os.path.join(OUT, "kuhn-strategy.png"), dpi=160)
     plt.close(fig)
     print("wrote kuhn-strategy.png")
