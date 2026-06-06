@@ -4,9 +4,9 @@ A Counterfactual Regret Minimization poker solver written in C++17, with a stati
 
 CFR-Edge solves imperfect-information poker by repeatedly walking the game tree, accumulating the regret of not having taken each action, and averaging the resulting strategies into an approximate Nash equilibrium. One engine drives three games of growing size: Kuhn Poker (12 information sets), Leduc Hold'em (288), and abstracted heads-up no-limit Texas Hold'em (33,260). For the two small games it also computes the exact best response to the average strategy, so the distance from equilibrium is measured rather than assumed. On Kuhn Poker, whose equilibrium is known and has exploitability exactly zero, the solver's average strategy reaches an exact best-response exploitability of 4.409 × 10⁻⁴ after 10,000 iterations.
 
-![Heads-up poker hand played out under the solved strategy](docs/media/poker-table-demo.gif)
+![Heads-up poker hand played out under the solved strategy](assets/poker-table-demo.gif)
 
-*An illustrative heads-up hand played by the solver against itself. Both seats follow the trained strategy, and the bet sizes are the solver's 33%, 75%, and 100% pot action abstraction. CFR-Edge computes the equilibrium; the table is where those decisions play out. Rendered from the strategy bundles by `scripts/make_readme_assets.py`.*
+*An illustrative heads-up hand played by the solver against itself. Both seats follow the trained strategy, and the bet sizes are the solver's 33%, 75%, and 100% pot action abstraction. CFR-Edge computes the equilibrium; the table is where those decisions play out.*
 
 > Build the solver and run every experiment:
 > ```bash
@@ -133,7 +133,7 @@ CFR's regret is bounded by $R^T_i \le \Delta_i\, |\mathcal{I}_i|\, \sqrt{|A_i|}\
 
 The Kuhn equilibrium is small enough to read directly, and the solved strategy reproduces its known structure: the King always bets and calls, the Jack bluffs at a fixed low rate, and the Queen is the indifferent hand that mixes its calls.
 
-![Kuhn Poker equilibrium strategy across all 12 information sets](docs/media/kuhn-strategy.png)
+![Kuhn Poker equilibrium strategy across all 12 information sets](assets/kuhn-strategy.png)
 
 *The DCFR average strategy at every Kuhn information set. The Jack open-bets 25% of the time as a bluff, the King value-bets 75% and never folds, and the Queen checks first then calls a raise about 59% of the time. This matches the analytically known equilibrium family, which is the first sanity check that the regret updates are correct.*
 
@@ -153,7 +153,7 @@ The empirical convergence rate alpha fits exploitability to a power law (exploit
 | CFR+ | 1.585 × 10⁻³ | 0.496 |
 | **DCFR** | **4.409 × 10⁻⁴** | **0.605** |
 
-![Kuhn Poker exploitability convergence for CFR, CFR+, and DCFR](docs/media/kuhn-convergence.png)
+![Kuhn Poker exploitability convergence for CFR, CFR+, and DCFR](assets/kuhn-convergence.png)
 
 *Exact best-response exploitability against iterations, log axes. DCFR reaches an exploitability about three times lower than the other two and converges faster. The CFR rate near 0.5 lines up with the theoretical O(1/sqrt(T)) regret bound.*
 
@@ -167,7 +167,7 @@ The empirical convergence rate alpha fits exploitability to a power law (exploit
 | CFR+ | 7.873 × 10⁻³ | 0.480 |
 | DCFR | 7.542 × 10⁻³ | 0.497 |
 
-![Leduc Hold'em exploitability convergence for CFR, CFR+, and DCFR](docs/media/leduc-convergence.png)
+![Leduc Hold'em exploitability convergence for CFR, CFR+, and DCFR](assets/leduc-convergence.png)
 
 *On Leduc the three variants land close together, and at 10,000 iterations vanilla CFR (blue) produced the lowest exploitability of the three. The ranking is sensitive to the iteration count, which is why the convergence curves matter more than any single end point.*
 
@@ -175,13 +175,13 @@ The empirical convergence rate alpha fits exploitability to a power law (exploit
 
 1,000 MCCFR iterations build 33,260 information sets in about 6.76 seconds. The export includes a 169-class preflop range summary, which feeds the viewer's range chart and the figure below.
 
-![Heads-up Hold'em preflop range chart of raise and all-in frequency](docs/media/holdem-range.png)
+![Heads-up Hold'em preflop range chart of raise and all-in frequency](assets/holdem-range.png)
 
 *Bet or all-in frequency for each of the 169 canonical starting hands, read straight from the exported preflop summary. Strong hands in the upper left lean toward raising and shoving, which is the shape an equilibrium range is expected to take.*
 
 Because a true best response over the full game is intractable here, the reported convergence number is a proxy: the mean positive regret at preflop nodes. That quantity grows as regrets accumulate, so it tracks training progress and scale rather than closeness to equilibrium. This part of the project demonstrates the abstraction and the sampling pipeline at scale, not a solved game.
 
-![Hold'em regret-magnitude proxy growing with iterations](docs/media/holdem-proxy.png)
+![Hold'em regret-magnitude proxy growing with iterations](assets/holdem-proxy.png)
 
 *The Texas Hold'em number is a regret-magnitude proxy, not an exploitability. It increases from 0.012 to 31.6 over 1,000 iterations as regrets accumulate, so it is shown here as a measure of scale, not of optimality.*
 
@@ -222,15 +222,7 @@ On a multi-configuration generator such as Visual Studio, the binaries are writt
 ./build/cfr_solver --no-holdem     # skip Texas Hold'em
 ```
 
-To render the CSV curves as plots (and a text summary):
-
-```bash
-python scripts/plot_convergence.py
-```
-
-The script needs matplotlib for the PNG plots and prints a text-only summary if it is not installed.
-
-### Strategy export and README figures
+### Strategy export
 
 A separate binary regenerates the JSON bundles the viewer reads:
 
@@ -238,11 +230,7 @@ A separate binary regenerates the JSON bundles the viewer reads:
 ./build/json_exporter --out ./web/public/strategies/
 ```
 
-This writes `kuhn_cfr.json`, `kuhn_cfr_plus.json`, `kuhn_dcfr.json`, the three Leduc files, `holdem_dcfr.json`, and an index `meta.json`. The figures in this README are rendered from those bundles with:
-
-```bash
-python scripts/make_readme_assets.py
-```
+This writes `kuhn_cfr.json`, `kuhn_cfr_plus.json`, `kuhn_dcfr.json`, the three Leduc files, `holdem_dcfr.json`, and an index `meta.json`. The figures in this README are rendered from those bundles.
 
 ### Web viewer
 
@@ -261,9 +249,8 @@ Open `http://localhost:3000`. The app reads only the static JSON under `web/publ
 | `include/` | Headers for the engine, games, abstraction, SIMD, and JSON output |
 | `src/` | Solver implementations, the experiment driver, and the exporter |
 | `web/` | Next.js viewer, components, and the static strategy bundles |
-| `scripts/` | `plot_convergence.py` and `make_readme_assets.py` |
-| `docs/media/` | Figures and the animation rendered from the strategy bundles |
-| `results/` | CSV and plot output written by `cfr_solver` |
+| `assets/` | Figures and the animation rendered from the strategy bundles |
+| `results/` | Convergence CSVs written by `cfr_solver` |
 
 ## References
 

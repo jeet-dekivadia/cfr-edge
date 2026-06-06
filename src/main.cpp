@@ -215,6 +215,6 @@ int main(int argc, char** argv) {
     if (do_abstract) run_abstraction_experiments();
     if (do_holdem)   run_holdem_experiments();
 
-    std::cout << "\nAll done. Run: python scripts/plot_convergence.py\n";
+    std::cout << "\nAll done. Convergence CSVs written to results/.\n";
     return 0;
 }
