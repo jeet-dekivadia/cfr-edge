@@ -4,9 +4,9 @@ A Counterfactual Regret Minimization poker solver written in C++17, with a stati
 
 CFR-Edge solves imperfect-information poker by repeatedly walking the game tree, accumulating the regret of not having taken each action, and averaging the resulting strategies into an approximate Nash equilibrium. One engine drives three games of growing size: Kuhn Poker (12 information sets), Leduc Hold'em (288), and abstracted heads-up no-limit Texas Hold'em (33,260). For the two small games it also computes the exact best response to the average strategy, so the distance from equilibrium is measured rather than assumed. On Kuhn Poker, whose equilibrium is known and has exploitability exactly zero, the solver's average strategy reaches an exact best-response exploitability of 4.409 × 10⁻⁴ after 10,000 iterations.
 
-![Interactive 3D poker table and the Play-vs-Nash demo from the CFR-Edge web viewer](docs/media/poker-table-demo.gif)
+![Heads-up poker hand played out under the solved strategy](docs/media/poker-table-demo.gif)
 
-*The web viewer reading the solved strategies. The home page renders an interactive 3D poker table (three.js), and the Play page deals Kuhn Poker hands against the shipped DCFR strategy, scoring every decision against its exact expected value. The solver computes the equilibrium; the table is where those decisions play out. TODO: add a short screen recording at `docs/media/poker-table-demo.gif` capturing the rotating table on `/` and a few hands on `/play`.*
+*An illustrative heads-up hand played by the solver against itself. Both seats follow the trained strategy, and the bet sizes are the solver's 33%, 75%, and 100% pot action abstraction. CFR-Edge computes the equilibrium; the table is where those decisions play out. Rendered from the strategy bundles by `scripts/make_readme_assets.py`.*
 
 > Build the solver and run every experiment:
 > ```bash
@@ -17,7 +17,7 @@ CFR-Edge solves imperfect-information poker by repeatedly walking the game tree,
 
 ## Contents
 
-[Highlights](#highlights) · [How it works](#how-it-works) · [Results](#results) · [Correctness and validation](#correctness-and-validation) · [Build and run](#build-and-run) · [Project structure](#project-structure)
+[Highlights](#highlights) · [How it works](#how-it-works) · [The algorithm in equations](#the-algorithm-in-equations) · [The solved strategy](#the-solved-strategy) · [Results](#results) · [Correctness and validation](#correctness-and-validation) · [Build and run](#build-and-run) · [Project structure](#project-structure)
 
 ## Highlights
 
@@ -30,8 +30,6 @@ CFR-Edge solves imperfect-information poker by repeatedly walking the game tree,
 - The C++ solver and the Next.js viewer stay fully decoupled through static JSON bundles, so the front end runs with no server, API, or solver binary.
 
 ## How it works
-
-### Counterfactual Regret Minimization
 
 A poker hand is a tree of decisions in which each player sees only part of the state. An information set is everything one player can observe at a decision point (its own cards and the public betting history) and nothing else. CFR plays the game against itself for many iterations. At every information set it tracks, for each action, how much better off it would have been had it always taken that action, weighted by the probability the opponent's play would have led there. Those cumulative regrets are turned into the next iteration's strategy by regret matching (play each action in proportion to its positive regret). The strategy that converges to equilibrium is not the last one played but the average of all of them, which is what the solver stores and exports.
 
@@ -86,6 +84,59 @@ The front end is a Next.js 16 and React 19 application (TypeScript, Tailwind, Re
 - a 13 by 13 Texas Hold'em preflop range chart with raise, call, fold, and all-in views,
 - an annotated walkthrough of the core C++ snippets.
 
+## The algorithm in equations
+
+The same definitions drive every game. Let $\sigma$ be a strategy profile, $I$ an information set belonging to player $i$, and $Z_I$ the terminal histories that pass through $I$. The counterfactual value of $I$ weights each outcome by the probability that everyone except $i$ (chance included) played to reach it:
+
+$$
+v_i(I, \sigma) = \sum_{z \in Z_I} \pi^{\sigma}_{-i}(z)\, u_i(z)
+$$
+
+The instantaneous regret of an action is how much better the player would have done by committing to that action at $I$, and cumulative regret sums it across iterations:
+
+$$
+r^t(I, a) = v_i\!\left(I, \sigma^t_{I \to a}\right) - v_i\!\left(I, \sigma^t\right),
+\qquad
+R^T(I, a) = \sum_{t=1}^{T} r^t(I, a)
+$$
+
+Regret matching turns positive cumulative regret into the next strategy (uniform when no regret is positive):
+
+$$
+\sigma^{T+1}(I, a) = \frac{R^{T,+}(I, a)}{\sum_{b} R^{T,+}(I, b)},
+\qquad R^{+} = \max(R, 0)
+$$
+
+The strategy that actually converges is the reach-weighted average over all iterations, with the per-iteration weight $w_t$ being the only difference between the variants:
+
+$$
+\bar{\sigma}^T(I, a) = \frac{\sum_{t=1}^{T} w_t\, \pi^{\sigma^t}_i(I)\, \sigma^t(I, a)}{\sum_{t=1}^{T} w_t\, \pi^{\sigma^t}_i(I)},
+\qquad
+w_t^{\text{CFR}} = 1,\;\; w_t^{\text{CFR+}} = t,\;\; w_t^{\text{DCFR}} = t^2
+$$
+
+DCFR additionally discounts the accumulated positive regret at the start of each iteration before adding the new regret, with negatives reset to zero:
+
+$$
+R^{t}(I,a) \leftarrow \max\!\left(R^{t-1}(I,a),\, 0\right) \cdot \frac{t^{1.5}}{t^{1.5} + 1} \; + \; r^{t}(I,a)
+$$
+
+Exploitability is the average of both players' best-response values against the profile, which is $0$ at a Nash equilibrium:
+
+$$
+e(\sigma) = \tfrac{1}{2}\left( \max_{\sigma_1'} u_1(\sigma_1', \sigma_2) + \max_{\sigma_2'} u_2(\sigma_1, \sigma_2') \right)
+$$
+
+CFR's regret is bounded by $R^T_i \le \Delta_i\, |\mathcal{I}_i|\, \sqrt{|A_i|}\, \sqrt{T}$, so average regret and exploitability shrink on the order of $O(1/\sqrt{T})$. The measured rates below sit near that bound.
+
+## The solved strategy
+
+The Kuhn equilibrium is small enough to read directly, and the solved strategy reproduces its known structure: the King always bets and calls, the Jack bluffs at a fixed low rate, and the Queen is the indifferent hand that mixes its calls.
+
+![Kuhn Poker equilibrium strategy across all 12 information sets](docs/media/kuhn-strategy.png)
+
+*The DCFR average strategy at every Kuhn information set. The Jack open-bets 25% of the time as a bluff, the King value-bets 75% and never folds, and the Queen checks first then calls a raise about 59% of the time. This matches the analytically known equilibrium family, which is the first sanity check that the regret updates are correct.*
+
 ## Results
 
 The exploitability and timing figures below come from the single run that produced the committed strategy bundles in `web/public/strategies/`. The solver is single-threaded, and the run's exact CPU is not recorded in the repository.
@@ -102,11 +153,9 @@ The empirical convergence rate alpha fits exploitability to a power law (exploit
 | CFR+ | 1.585 × 10⁻³ | 0.496 |
 | **DCFR** | **4.409 × 10⁻⁴** | **0.605** |
 
-DCFR reaches an exploitability about three times lower than the other two and converges faster. The CFR rate near 0.5 lines up with the theoretical O(1/sqrt(T)) regret bound.
+![Kuhn Poker exploitability convergence for CFR, CFR+, and DCFR](docs/media/kuhn-convergence.png)
 
-![Kuhn Poker exploitability convergence for CFR, CFR+, and DCFR](docs/media/convergence-kuhn.png)
-
-*Exploitability against iterations on a log scale, from the viewer's `/solve` page or `scripts/plot_convergence.py`. TODO: add the plot at `docs/media/convergence-kuhn.png` (run `cfr_solver`, then `python scripts/plot_convergence.py`, and use `results/kuhn_convergence.png`).*
+*Exact best-response exploitability against iterations, log axes. DCFR reaches an exploitability about three times lower than the other two and converges faster. The CFR rate near 0.5 lines up with the theoretical O(1/sqrt(T)) regret bound.*
 
 ### Leduc Hold'em
 
@@ -118,11 +167,23 @@ DCFR reaches an exploitability about three times lower than the other two and co
 | CFR+ | 7.873 × 10⁻³ | 0.480 |
 | DCFR | 7.542 × 10⁻³ | 0.497 |
 
-On Leduc the three variants land close together, and at 10,000 iterations vanilla CFR produced the lowest exploitability of the three. The ranking is sensitive to the iteration count, which is why the convergence curves matter more than any single end point.
+![Leduc Hold'em exploitability convergence for CFR, CFR+, and DCFR](docs/media/leduc-convergence.png)
+
+*On Leduc the three variants land close together, and at 10,000 iterations vanilla CFR (blue) produced the lowest exploitability of the three. The ranking is sensitive to the iteration count, which is why the convergence curves matter more than any single end point.*
 
 ### Texas Hold'em
 
-1,000 MCCFR iterations build 33,260 information sets in about 6.76 seconds. Because a true best response over the full game is intractable here, the reported number is a proxy: the mean positive regret at preflop nodes. That quantity grows as regrets accumulate (from 0.012 at the first iteration to 31.6 at iteration 1,000), so it tracks training progress and scale rather than closeness to equilibrium. This part of the project demonstrates the abstraction and the sampling pipeline at scale, not a solved game. The export also includes a 169-class preflop range summary, which feeds the viewer's range chart.
+1,000 MCCFR iterations build 33,260 information sets in about 6.76 seconds. The export includes a 169-class preflop range summary, which feeds the viewer's range chart and the figure below.
+
+![Heads-up Hold'em preflop range chart of raise and all-in frequency](docs/media/holdem-range.png)
+
+*Bet or all-in frequency for each of the 169 canonical starting hands, read straight from the exported preflop summary. Strong hands in the upper left lean toward raising and shoving, which is the shape an equilibrium range is expected to take.*
+
+Because a true best response over the full game is intractable here, the reported convergence number is a proxy: the mean positive regret at preflop nodes. That quantity grows as regrets accumulate, so it tracks training progress and scale rather than closeness to equilibrium. This part of the project demonstrates the abstraction and the sampling pipeline at scale, not a solved game.
+
+![Hold'em regret-magnitude proxy growing with iterations](docs/media/holdem-proxy.png)
+
+*The Texas Hold'em number is a regret-magnitude proxy, not an exploitability. It increases from 0.012 to 31.6 over 1,000 iterations as regrets accumulate, so it is shown here as a measure of scale, not of optimality.*
 
 ## Correctness and validation
 
@@ -151,7 +212,7 @@ cmake --build build --config Release
 
 On a multi-configuration generator such as Visual Studio, the binaries are written to `build/Release/` rather than `build/`.
 
-`cfr_solver` runs Kuhn, Leduc, the Leduc abstraction comparison, and Texas Hold'em, writing convergence CSVs into `results/`. Flags narrow the run:
+`cfr_solver` runs Kuhn, Leduc, the Leduc abstraction comparison, and Texas Hold'em, printing an exploitability report for each and writing convergence CSVs into `results/`. Flags narrow the run:
 
 ```bash
 ./build/cfr_solver --kuhn-only     # Kuhn only
@@ -161,10 +222,6 @@ On a multi-configuration generator such as Visual Studio, the binaries are writt
 ./build/cfr_solver --no-holdem     # skip Texas Hold'em
 ```
 
-![cfr_solver printing its per-iteration exploitability report](docs/media/solver-run.png)
-
-*The solver prints an exploitability report and the converged strategy for each game. TODO: add a terminal screenshot at `docs/media/solver-run.png` of `./build/cfr_solver --kuhn-only` running.*
-
 To render the CSV curves as plots (and a text summary):
 
 ```bash
@@ -173,7 +230,7 @@ python scripts/plot_convergence.py
 
 The script needs matplotlib for the PNG plots and prints a text-only summary if it is not installed.
 
-### Strategy export
+### Strategy export and README figures
 
 A separate binary regenerates the JSON bundles the viewer reads:
 
@@ -181,7 +238,11 @@ A separate binary regenerates the JSON bundles the viewer reads:
 ./build/json_exporter --out ./web/public/strategies/
 ```
 
-This writes `kuhn_cfr.json`, `kuhn_cfr_plus.json`, `kuhn_dcfr.json`, the three Leduc files, `holdem_dcfr.json`, and an index `meta.json`.
+This writes `kuhn_cfr.json`, `kuhn_cfr_plus.json`, `kuhn_dcfr.json`, the three Leduc files, `holdem_dcfr.json`, and an index `meta.json`. The figures in this README are rendered from those bundles with:
+
+```bash
+python scripts/make_readme_assets.py
+```
 
 ### Web viewer
 
@@ -200,7 +261,8 @@ Open `http://localhost:3000`. The app reads only the static JSON under `web/publ
 | `include/` | Headers for the engine, games, abstraction, SIMD, and JSON output |
 | `src/` | Solver implementations, the experiment driver, and the exporter |
 | `web/` | Next.js viewer, components, and the static strategy bundles |
-| `scripts/` | `plot_convergence.py`, which renders the CSV curves |
+| `scripts/` | `plot_convergence.py` and `make_readme_assets.py` |
+| `docs/media/` | Figures and the animation rendered from the strategy bundles |
 | `results/` | CSV and plot output written by `cfr_solver` |
 
 ## References
