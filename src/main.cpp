@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <filesystem>
 #include <chrono>
+#include <stdexcept>
 
 using namespace cfr;
 
@@ -48,6 +49,10 @@ static void run_kuhn_experiments() {
               << KUHN_NASH_VALUE_P0 << ",  exploitability = 0 at Nash\n";
 
     std::ofstream combined("results/kuhn_convergence.csv");
+    if (!combined.is_open()) {
+        std::cerr << "Error: cannot open results/kuhn_convergence.csv for writing\n";
+        return;
+    }
     write_csv_header(combined);
 
     for (auto [mode, label] : std::vector<std::pair<Mode,std::string>>{
@@ -82,6 +87,9 @@ static void run_kuhn_experiments() {
     }
 
     combined.close();
+    if (combined.fail()) {
+        std::cerr << "Warning: errors occurred writing results/kuhn_convergence.csv\n";
+    }
     std::cout << "\n  -> results/kuhn_convergence.csv\n";
 
     // Print converged strategy
@@ -98,6 +106,10 @@ static void run_leduc_experiments() {
     std::cout << "\n========== LEDUC HOLD'EM ==========\n";
 
     std::ofstream combined("results/leduc_convergence.csv");
+    if (!combined.is_open()) {
+        std::cerr << "Error: cannot open results/leduc_convergence.csv for writing\n";
+        return;
+    }
     write_csv_header(combined);
 
     for (auto [mode, label] : std::vector<std::pair<Mode,std::string>>{
@@ -117,6 +129,9 @@ static void run_leduc_experiments() {
     }
 
     combined.close();
+    if (combined.fail()) {
+        std::cerr << "Warning: errors occurred writing results/leduc_convergence.csv\n";
+    }
     std::cout << "\n  -> results/leduc_convergence.csv\n";
 }
 
@@ -127,6 +142,10 @@ static void run_abstraction_experiments() {
     std::cout << "  (exploitability measured within the abstract game)\n";
 
     std::ofstream combined("results/abstraction_comparison.csv");
+    if (!combined.is_open()) {
+        std::cerr << "Error: cannot open results/abstraction_comparison.csv for writing\n";
+        return;
+    }
     combined << "iteration,exploitability,scheme\n";
 
     auto run = [&](const char* label,
@@ -154,6 +173,9 @@ static void run_abstraction_experiments() {
     run("strength+no_raise", abstraction::BucketScheme::STRENGTH,  abstraction::ActionScheme::NO_RAISE);
 
     combined.close();
+    if (combined.fail()) {
+        std::cerr << "Warning: errors occurred writing results/abstraction_comparison.csv\n";
+    }
     std::cout << "\n  -> results/abstraction_comparison.csv\n";
 }
 
@@ -174,11 +196,18 @@ static void run_holdem_experiments() {
 
     // Write convergence CSV
     std::ofstream out("results/holdem_convergence.csv");
+    if (!out.is_open()) {
+        std::cerr << "Error: cannot open results/holdem_convergence.csv for writing\n";
+        return;
+    }
     out << "iteration,exploitability,variant\n";
     out << std::scientific << std::setprecision(8);
     for (const auto& [it, ex] : curve)
         out << it << "," << ex << ",MCCFR_DCFR\n";
     out.close();
+    if (out.fail()) {
+        std::cerr << "Warning: errors occurred writing results/holdem_convergence.csv\n";
+    }
     std::cout << "  -> results/holdem_convergence.csv\n";
 
     holdem::print_holdem_strategy(nodes);
@@ -199,7 +228,12 @@ int main(int argc, char** argv) {
     std::cout << "scalar\n";
 #endif
 
-    std::filesystem::create_directories("results");
+    std::error_code ec;
+    std::filesystem::create_directories("results", ec);
+    if (ec) {
+        std::cerr << "Error: cannot create results/ directory: " << ec.message() << "\n";
+        return 1;
+    }
 
     bool do_kuhn = true, do_leduc = true, do_abstract = true, do_holdem = true;
     for (int i = 1; i < argc; i++) {
@@ -208,6 +242,9 @@ int main(int argc, char** argv) {
         else if (!std::strcmp(argv[i], "--holdem-only")){ do_kuhn  = do_leduc = do_abstract = false; }
         else if (!std::strcmp(argv[i], "--no-abstract")) do_abstract = false;
         else if (!std::strcmp(argv[i], "--no-holdem"))   do_holdem   = false;
+        else {
+            std::cerr << "Warning: unrecognized option '" << argv[i] << "'\n";
+        }
     }
 
     if (do_kuhn)     run_kuhn_experiments();

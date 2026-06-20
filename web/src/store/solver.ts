@@ -57,7 +57,11 @@ export const useSolverStore = create<SolverState>((set, get) => ({
       // Update current strategy
       get().setIteration(get().currentIteration);
     } catch (e) {
-      set({ loadingGame: null, error: String(e) });
+      const message = e instanceof Error
+        ? `${e.message}${e.stack ? '\n' + e.stack : ''}`
+        : String(e);
+      console.error('Failed to load game strategies:', e);
+      set({ loadingGame: null, error: message });
     }
   },
 

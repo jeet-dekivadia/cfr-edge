@@ -4,6 +4,7 @@
 
 #include "kuhn.h"
 #include "leduc.h"
+#include <cmath>
 #include <iostream>
 #include <iomanip>
 #include <vector>

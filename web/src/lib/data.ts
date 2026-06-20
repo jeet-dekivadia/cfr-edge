@@ -74,7 +74,10 @@ export function sampleNashAction(
   infoKey: string,
 ): number {
   const node = strategy[infoKey];
-  if (!node) return 0;
+  if (!node) {
+    console.warn(`sampleNashAction: no strategy found for infoset '${infoKey}', defaulting to action 0`);
+    return 0;
+  }
   const r = Math.random();
   let cum = 0;
   for (let i = 0; i < node.probs.length; i++) {
@@ -86,15 +89,18 @@ export function sampleNashAction(
 
 // Kuhn Poker payoff for player 0 (+/- big blinds)
 export function kuhnPayoff(p0Card: string, p1Card: string, history: string): number {
-  const p0 = KUHN_CARD_VALUES[p0Card as 'J'|'Q'|'K'] ?? 0;
-  const p1 = KUHN_CARD_VALUES[p1Card as 'J'|'Q'|'K'] ?? 0;
+  const p0 = KUHN_CARD_VALUES[p0Card as 'J'|'Q'|'K'];
+  const p1 = KUHN_CARD_VALUES[p1Card as 'J'|'Q'|'K'];
+  if (p0 === undefined || p1 === undefined) {
+    throw new Error(`kuhnPayoff: invalid card(s) p0='${p0Card}', p1='${p1Card}'`);
+  }
   const p0Wins = p0 > p1;
   if (history === 'pp')  return p0Wins ?  1 : -1;
   if (history === 'bp')  return  1;
   if (history === 'bb')  return p0Wins ?  2 : -2;
   if (history === 'pbp') return -1;
   if (history === 'pbb') return p0Wins ?  2 : -2;
-  return 0;
+  throw new Error(`kuhnPayoff: unrecognized terminal history '${history}'`);
 }
 
 export function isKuhnTerminal(history: string): boolean {
@@ -132,8 +138,12 @@ export function kuhnExpectedValue(
 
   const player = history.length % 2;
   const card = player === 0 ? p0Card : p1Card;
-  const node = strategy[kuhnInfoKey(card, history)];
-  const probs = node?.probs ?? [0.5, 0.5];
+  const infoKey = kuhnInfoKey(card, history);
+  const node = strategy[infoKey];
+  const probs = node?.probs ?? (() => {
+    console.warn(`kuhnExpectedValue: no strategy node for '${infoKey}', using uniform`);
+    return [0.5, 0.5];
+  })();
   const actionChars = ['p', 'b'];
 
   if (forcedRootAction != null && player === 0) {
@@ -167,8 +177,12 @@ export function kuhnActionValues(
     ), 0) / possibleOppCards.length
   ));
 
-  const node = strategy[kuhnInfoKey(playerCard, history)];
-  const probs = node?.probs ?? [0.5, 0.5];
+  const actionInfoKey = kuhnInfoKey(playerCard, history);
+  const node = strategy[actionInfoKey];
+  const probs = node?.probs ?? (() => {
+    console.warn(`kuhnActionValues: no strategy node for '${actionInfoKey}', using uniform`);
+    return [0.5, 0.5];
+  })();
   const nashValue = actionValues.reduce((sum, value, i) => sum + value * (probs[i] ?? 0), 0);
 
   return {
