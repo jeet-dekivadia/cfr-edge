@@ -1,4 +1,5 @@
 #include "kuhn.h"
+#include "cfr_utils.h"
 #include <iostream>
 #include <iomanip>
 #include <cassert>
@@ -87,12 +88,7 @@ double cfr_traverse(InfoMap& nodes, int p0_card, int p1_card,
         node.regret_sum[a] += cf_reach * sign * (util[a] - node_util);
     }
 
-    // strategy-sum weighting: 1 (CFR), t (CFR+), t^2 (DCFR)
-    double weight;
-    if      (mode == Mode::CFR_PLUS) weight = (double)iteration;
-    else if (mode == Mode::DCFR)     weight = (double)iteration * (double)iteration;
-    else                             weight = 1.0;
-
+    double weight = strategy_sum_weight(mode, iteration);
     for (int a = 0; a < NUM_ACTIONS; a++) {
         node.strategy_sum[a] += weight * my_reach * strategy[a];
     }
@@ -209,29 +205,16 @@ std::vector<std::pair<int,double>> train(InfoMap& nodes, int iterations,
     std::vector<std::pair<int,double>> curve;
 
     for (int t = 1; t <= iterations; t++) {
-
-        // DCFR: discount positive regrets before this iteration's traversal.
-        // alpha=1.5 (aggressive discount), negative regrets floored to 0.
-        if (mode == Mode::DCFR) {
-            double alpha  = 1.5;
-            double pt     = std::pow((double)t, alpha);
-            double factor = pt / (pt + 1.0);
-            for (auto& [key, node] : nodes) {
-                for (int a = 0; a < node.num_actions; a++)
-                    node.regret_sum[a] = std::max(node.regret_sum[a], 0.0) * factor;
-            }
-        }
+        if (mode == Mode::DCFR)
+            dcfr_discount_regrets(nodes, t);
 
         for (const auto& d : deals)
             cfr_traverse(nodes, d[0], d[1], "", 1.0, 1.0, mode, t);
 
-        // CFR+ / DCFR: floor regrets AFTER all deals complete (not mid-iteration).
-        if (mode == Mode::CFR_PLUS || mode == Mode::DCFR) {
-            for (auto& [key, node] : nodes)
-                node.floor_regrets();
-        }
+        if (mode == Mode::CFR_PLUS || mode == Mode::DCFR)
+            floor_all_regrets(nodes);
 
-        if (t == 1 || t % eval_every == 0 || t == iterations)
+        if (should_eval(t, eval_every, iterations))
             curve.push_back({t, exploitability(nodes)});
     }
     return curve;
