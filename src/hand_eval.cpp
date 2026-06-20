@@ -220,7 +220,7 @@ void HandEvaluator::build_pairs_table() {
 // lookup-table implementation. For MCCFR equity estimation this is sufficient.
 
 int HandEvaluator::eval5_impl(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t) const {
-    return 0; // placeholder; real logic below in eval5 via direct approach
+    throw std::logic_error("eval5_impl is not implemented; use eval5(const int[5]) instead");
 }
 
 int HandEvaluator::eval5(const int cards[5]) const {
@@ -244,13 +244,21 @@ int HandEvaluator::eval5(const int cards[5]) const {
 
     if (flush && unique_ranks) {
         // Straight flush or flush
-        auto it = flush_table_[mask];
-        return it >= 0 ? it : 323; // fallback
+        auto val = flush_table_[mask];
+        if (val < 0) {
+            throw std::logic_error("flush_table lookup failed for mask " + std::to_string(mask) +
+                                   "; table may not be fully initialized");
+        }
+        return val;
     }
     if (unique_ranks) {
         // Straight or high card
-        auto it = unique5_table_[mask];
-        return it >= 0 ? it : 6186;
+        auto val = unique5_table_[mask];
+        if (val < 0) {
+            throw std::logic_error("unique5_table lookup failed for mask " + std::to_string(mask) +
+                                   "; table may not be fully initialized");
+        }
+        return val;
     }
 
     // Hands with repeated ranks: count frequencies
@@ -296,8 +304,7 @@ int HandEvaluator::eval5(const int cards[5]) const {
         return 3326 + (12-pair_ranks[0])*858 + (12-kickers[0])*66 + (12-kickers[1])*11 + (12-kickers[2]);
     }
 
-    // Should not reach here if unique_ranks was false
-    return 7461;
+    throw std::logic_error("eval5: unclassified hand (no category matched)");
 }
 
 int HandEvaluator::eval7(const int cards[7]) const {

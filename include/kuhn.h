@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <stdexcept>
 
 namespace cfr {
 namespace kuhn {
@@ -17,6 +18,10 @@ constexpr int PASS = 0;
 constexpr int BET = 1;
 
 inline char card_name(int c) {
+    if (c < 0 || c >= NUM_CARDS) {
+        throw std::out_of_range("card_name: card index " + std::to_string(c) +
+                                " out of range [0, " + std::to_string(NUM_CARDS) + ")");
+    }
     constexpr char n[] = {'J', 'Q', 'K'};
     return n[c];
 }

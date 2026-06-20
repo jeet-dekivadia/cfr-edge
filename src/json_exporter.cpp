@@ -33,8 +33,17 @@ using json = nlohmann::json;
 
 static void write_json(const std::string& path, const json& j) {
     std::ofstream f(path);
+    if (!f.is_open()) {
+        std::cerr << "Error: cannot open " << path << " for writing\n";
+        return;
+    }
     f << j.dump(2);
-    std::cout << "  wrote " << path << "\n";
+    f.close();
+    if (f.fail()) {
+        std::cerr << "Warning: errors occurred writing " << path << "\n";
+    } else {
+        std::cout << "  wrote " << path << "\n";
+    }
 }
 
 static std::string mode_str(Mode m) {
@@ -144,7 +153,12 @@ int main(int argc, char** argv) {
             out_dir = argv[++i];
     }
 
-    std::filesystem::create_directories(out_dir);
+    std::error_code ec;
+    std::filesystem::create_directories(out_dir, ec);
+    if (ec) {
+        std::cerr << "Error: cannot create output directory '" << out_dir << "': " << ec.message() << "\n";
+        return 1;
+    }
     std::cout << "cfr-edge json exporter\n";
     std::cout << "output: " << out_dir << "\n\n";
 

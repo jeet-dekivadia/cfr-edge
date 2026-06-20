@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <stdexcept>
 
 namespace cfr {
 namespace leduc {
@@ -25,6 +26,10 @@ constexpr int BET_SIZE[2] = {2, 4};  // round 0 and round 1
 constexpr int MAX_RAISES = 2;        // max bets per round (1 bet + 1 raise)
 
 inline char rank_name(int r) {
+    if (r < 0 || r >= NUM_RANKS) {
+        throw std::out_of_range("rank_name: rank index " + std::to_string(r) +
+                                " out of range [0, " + std::to_string(NUM_RANKS) + ")");
+    }
     constexpr char n[] = {'J', 'Q', 'K'};
     return n[r];
 }
