@@ -10,6 +10,7 @@
 #include <vector>
 #include <utility>
 #include <string>
+#include <cmath>
 
 namespace cfr {
 

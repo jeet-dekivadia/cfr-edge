@@ -74,3 +74,32 @@ if(EXISTS "${PROJECT_SOURCE_DIR}/src/json_exporter.cpp")
         target_compile_definitions(json_exporter PRIVATE HAS_OPENMP=1)
     endif()
 endif()
+
+# ---- Unit tests (Google Test) ----
+option(BUILD_TESTS "Build unit tests" ON)
+if(BUILD_TESTS)
+    enable_testing()
+    find_package(GTest REQUIRED)
+
+    set(LIB_SOURCES
+        src/kuhn.cpp
+        src/leduc.cpp
+        src/cfr.cpp
+        src/best_response.cpp
+        src/abstraction.cpp
+        src/hand_eval.cpp
+        src/holdem.cpp
+    )
+
+    file(GLOB TEST_SOURCES tests/*_test.cpp)
+    if(TEST_SOURCES)
+        add_executable(cfr_tests ${TEST_SOURCES} ${LIB_SOURCES})
+        target_link_libraries(cfr_tests GTest::GTest GTest::Main)
+        if(OpenMP_CXX_FOUND)
+            target_link_libraries(cfr_tests OpenMP::OpenMP_CXX)
+            target_compile_definitions(cfr_tests PRIVATE HAS_OPENMP=1)
+        endif()
+        include(GoogleTest)
+        gtest_discover_tests(cfr_tests)
+    endif()
+endif()
