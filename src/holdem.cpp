@@ -181,7 +181,7 @@ static void apply_action(int action, int player, double pot, double stack[2],
 
 // Determine available actions given current state.
 static int get_holdem_actions(double to_call, int num_bets, double stack_acting,
-                               int* actions) {
+                               double pot, int* actions) {
     int n = 0;
     if (to_call > 0.0) {
         actions[n++] = ACT_FOLD;
@@ -191,10 +191,17 @@ static int get_holdem_actions(double to_call, int num_bets, double stack_acting,
     }
     // Bet/raise actions (only if not already max bets and have chips)
     if (num_bets < MAX_BETS_PER_STREET && stack_acting > 0.0) {
-        actions[n++] = ACT_BET_33;
-        actions[n++] = ACT_BET_75;
-        actions[n++] = ACT_BET_100;
-        if (stack_acting > 0.0) actions[n++] = ACT_ALLIN;
+        // Only add a sized bet if its effective size is strictly less than all-in.
+        // BET_FRACS: 0.33, 0.75, 1.0 (indices 2, 3, 4 in BET_FRACS[]).
+        static const double FRACS[] = {0.33, 0.75, 1.0};
+        static const int ACTS[] = {ACT_BET_33, ACT_BET_75, ACT_BET_100};
+        double effective_pot = pot;  // pot already includes prior bets
+        for (int b = 0; b < 3; b++) {
+            double sized = FRACS[b] * effective_pot + to_call;
+            if (sized < stack_acting - 1e-9)  // strictly less than all-in
+                actions[n++] = ACTS[b];
+        }
+        actions[n++] = ACT_ALLIN;
     }
     return n;
 }
@@ -302,7 +309,7 @@ double mccfr_traverse(InfoMap& nodes,
     std::string key = make_holdem_key(bucket, street, street_hist);
 
     int avail[6];
-    int na = get_holdem_actions(to_call, num_bets, stack[player], avail);
+    int na = get_holdem_actions(to_call, num_bets, stack[player], pot, avail);
 
     auto it = nodes.find(key);
     if (it == nodes.end())
@@ -333,7 +340,8 @@ double mccfr_traverse(InfoMap& nodes,
             double child_util;
 
             if (action == ACT_FOLD) {
-                child_util = -pot / 2.0;
+                // Traverser folds → loses their total investment
+                child_util = -(STARTING_STACK - stack[traverser]);
             } else {
                 char c = encode_action_char(action, to_call);
                 next_hist = street_hist + c;
@@ -348,6 +356,7 @@ double mccfr_traverse(InfoMap& nodes,
                 } else if (now_street_over && street == 3) {
                     child_util = holdem_showdown(deal, new_pot, traverser);
                 } else {
+                    // Continue within the same street
                     std::string base = (last_slash == std::string::npos) ? "" :
                                        history.substr(0, last_slash + 1);
                     child_util = mccfr_traverse(nodes, deal, street,
@@ -393,8 +402,10 @@ double mccfr_traverse(InfoMap& nodes,
         apply_action(action, player, pot, stack, to_call,
                      new_pot, new_stack, new_to_call);
 
-        if (action == ACT_FOLD)
-            return new_pot * 0.5;
+        if (action == ACT_FOLD) {
+            // Opponent folds → traverser wins opponent's total investment
+            return STARTING_STACK - stack[player];
+        }
 
         char c = encode_action_char(action, to_call);
         std::string next_street_hist = street_hist + c;

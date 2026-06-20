@@ -95,14 +95,14 @@ public:
 
     // Hand category string
     static std::string category(int rank) {
-        if (rank <=  9) return "Straight Flush";
-        if (rank <= 165) return "Four of a Kind";
-        if (rank <= 321) return "Full House";
-        if (rank <= 1598) return "Flush";
-        if (rank <= 1608) return "Straight";
-        if (rank <= 2466) return "Three of a Kind";
-        if (rank <= 3324) return "Two Pair";
-        if (rank <= 6184) return "One Pair";
+        if (rank <=  10) return "Straight Flush";
+        if (rank <= 166) return "Four of a Kind";
+        if (rank <= 322) return "Full House";
+        if (rank <= 1599) return "Flush";
+        if (rank <= 1609) return "Straight";
+        if (rank <= 2467) return "Three of a Kind";
+        if (rank <= 3325) return "Two Pair";
+        if (rank <= 6185) return "One Pair";
         return "High Card";
     }
 
