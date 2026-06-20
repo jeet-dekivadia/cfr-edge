@@ -6,7 +6,12 @@ import type { GameStrategy, MetaFile } from './types';
 // Cache fetched strategies to avoid redundant loads
 const cache: Record<string, GameStrategy> = {};
 
+const SAFE_FILENAME = /^[a-z0-9_]+\.json$/;
+
 export async function loadStrategy(filename: string): Promise<GameStrategy> {
+  if (!SAFE_FILENAME.test(filename)) {
+    throw new Error(`Invalid strategy filename: ${filename}`);
+  }
   if (cache[filename]) return cache[filename];
   const res = await fetch(`/strategies/${filename}`);
   if (!res.ok) throw new Error(`Failed to load ${filename}: ${res.status}`);
