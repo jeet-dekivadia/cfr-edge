@@ -1,4 +1,5 @@
 #include "cfr.h"
+#include "cfr_utils.h"
 #include "kuhn.h"
 #include "leduc.h"
 #include <chrono>
@@ -75,10 +76,7 @@ static double traverse(SoAStore& store, int c0, int c1,
     for (int a = 0; a < 2; a++)
         store.add_regret(g, idx, a, cf * sign * (util[a] - node_util));
 
-    double weight;
-    if      (mode == Mode::CFR_PLUS) weight = (double)iter;
-    else if (mode == Mode::DCFR)     weight = (double)iter * (double)iter;
-    else                             weight = 1.0;
+    double weight = strategy_sum_weight(mode, iter);
 
     for (int a = 0; a < 2; a++)
         store.add_strategy_sum(g, idx, a, weight * my * strat[a]);
@@ -117,10 +115,9 @@ TrainResult run_training(const TrainConfig& config) {
 
             for (int t = 1; t <= config.iterations; t++) {
 
-                // DCFR: discount before computing strategies for this iteration
                 if (config.mode == Mode::DCFR) {
-                    double alpha  = 1.5;
-                    double pt     = std::pow((double)t, alpha);
+                    constexpr double alpha = 1.5;
+                    double pt     = std::pow(static_cast<double>(t), alpha);
                     double factor = pt / (pt + 1.0);
                     store.batch_discount_regrets(factor);
                 }
@@ -133,7 +130,7 @@ TrainResult run_training(const TrainConfig& config) {
                 if (config.mode == Mode::CFR_PLUS || config.mode == Mode::DCFR)
                     store.batch_floor_regrets();
 
-                if (t == 1 || t % config.eval_every == 0 || t == config.iterations) {
+                if (should_eval(t, config.eval_every, config.iterations)) {
                     // Build a temporary InfoMap from the SoA store so we can
                     // reuse the infoset-level exploitability evaluator.
                     //

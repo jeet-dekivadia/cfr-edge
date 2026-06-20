@@ -12,6 +12,7 @@
 //   meta.json   (index of all files + game summaries)
 
 #include "cfr.h"
+#include "cfr_utils.h"
 #include "kuhn.h"
 #include "leduc.h"
 #include "holdem.h"
@@ -77,20 +78,14 @@ static SnapshotTrainResult run_kuhn_snapshotted(Mode mode, int iterations, int e
     const std::set<int> snap_set(KUHN_SNAP_ITERS.begin(), KUHN_SNAP_ITERS.end());
 
     for (int t = 1; t <= iterations; t++) {
-        if (mode == Mode::DCFR) {
-            double alpha = 1.5;
-            double pt    = std::pow((double)t, alpha);
-            double factor = pt / (pt + 1.0);
-            for (auto& [key, nd] : nodes)
-                for (int a = 0; a < nd.num_actions; a++)
-                    nd.regret_sum[a] = std::max(nd.regret_sum[a], 0.0) * factor;
-        }
+        if (mode == Mode::DCFR)
+            dcfr_discount_regrets(nodes, t);
         for (const auto& d : deals)
             kuhn::cfr_traverse(nodes, d[0], d[1], "", 1.0, 1.0, mode, t);
         if (mode == Mode::CFR_PLUS || mode == Mode::DCFR)
-            for (auto& [key, nd] : nodes) nd.floor_regrets();
+            floor_all_regrets(nodes);
 
-        if (t == 1 || t % eval_every == 0 || t == iterations)
+        if (should_eval(t, eval_every, iterations))
             res.curve.push_back({t, kuhn::exploitability(nodes)});
 
         if (snap_set.count(t))
@@ -114,23 +109,17 @@ static SnapshotTrainResult run_leduc_snapshotted(Mode mode, int iterations, int 
     const std::set<int> snap_set(LEDUC_SNAP_ITERS.begin(), LEDUC_SNAP_ITERS.end());
 
     for (int t = 1; t <= iterations; t++) {
-        if (mode == Mode::DCFR) {
-            double alpha  = 1.5;
-            double pt     = std::pow((double)t, alpha);
-            double factor = pt / (pt + 1.0);
-            for (auto& [key, nd] : nodes)
-                for (int a = 0; a < nd.num_actions; a++)
-                    nd.regret_sum[a] = std::max(nd.regret_sum[a], 0.0) * factor;
-        }
+        if (mode == Mode::DCFR)
+            dcfr_discount_regrets(nodes, t);
         for (const auto& deal : deals) {
             int chips[2] = {1, 1};
             leduc::cfr_traverse(nodes, deal.cards, 0, "", 0, chips,
                                  deal.prob, deal.prob, mode, t);
         }
         if (mode == Mode::CFR_PLUS || mode == Mode::DCFR)
-            for (auto& [key, nd] : nodes) nd.floor_regrets();
+            floor_all_regrets(nodes);
 
-        if (t == 1 || t % eval_every == 0 || t == iterations)
+        if (should_eval(t, eval_every, iterations))
             res.curve.push_back({t, leduc::exploitability(nodes)});
 
         if (snap_set.count(t))

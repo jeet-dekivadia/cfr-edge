@@ -1,4 +1,5 @@
 #include "holdem.h"
+#include "cfr_utils.h"
 #include "hand_eval.h"
 #include <iostream>
 #include <iomanip>
@@ -198,6 +199,44 @@ static int get_holdem_actions(double to_call, int num_bets, double stack_acting,
     return n;
 }
 
+// ---- Holdem game-tree helpers (shared within this TU) ----
+
+// Evaluate showdown and return utility from traverser's perspective.
+static double holdem_showdown(const HoldemDeal& deal, double pot, int traverser) {
+    int all7_0[7] = {deal.hole[0][0], deal.hole[0][1],
+                     deal.board[0], deal.board[1], deal.board[2],
+                     deal.board[3], deal.board[4]};
+    int all7_1[7] = {deal.hole[1][0], deal.hole[1][1],
+                     deal.board[0], deal.board[1], deal.board[2],
+                     deal.board[3], deal.board[4]};
+    const auto& ev = handeval::get_evaluator();
+    int r0 = ev.eval7(all7_0), r1 = ev.eval7(all7_1);
+    double hp = pot * 0.5;
+    if (r0 < r1) return (traverser == 0) ?  hp : -hp;
+    if (r0 > r1) return (traverser == 0) ? -hp :  hp;
+    return 0.0;
+}
+
+// Encode a holdem action as a single history character.
+static char encode_action_char(int action, double to_call) {
+    if (action == ACT_CHECK_CALL && to_call <= 1e-9) return 'x';
+    if (action == ACT_CHECK_CALL)                    return 'c';
+    return '0' + (action - ACT_BET_33 + 1);
+}
+
+// Detect whether the current street is over after the latest action.
+static bool is_street_over(int action, double to_call,
+                           const std::string& street_hist) {
+    if (action == ACT_CHECK_CALL && to_call > 1e-9)
+        return true;
+    if (action == ACT_CHECK_CALL && to_call <= 1e-9
+        && street_hist.size() >= 2
+        && street_hist.back() == 'x'
+        && street_hist[street_hist.size() - 2] == 'x')
+        return true;
+    return false;
+}
+
 // ---- MCCFR External Sampling traversal ----
 
 double mccfr_traverse(InfoMap& nodes,
@@ -214,19 +253,8 @@ double mccfr_traverse(InfoMap& nodes,
                        std::mt19937& rng) {
 
     // ---- Terminal: fold ----
-    if (!history.empty() && history.back() == 'f') {
-        // The player who just folded was the acting player before the fold.
-        // Working backwards: length of history before 'f' gives us the acting player.
-        // The fold was the PREVIOUS action; we're now at the terminal node.
-        // Return utility from traverser's perspective.
-        // The folding player is NOT the traverser in the recursive call context -
-        // we handle fold returns inline in the action loop below.
-        // This branch is only reached if history ends in 'f' AND it's a terminal.
-        // Payoff: the player who folded loses what they put in; other wins the pot.
-        // We track pot already, so just return pot as gain for the non-folder.
-        // The caller has already accounted for who folded, so we return pot here.
+    if (!history.empty() && history.back() == 'f')
         return pot;
-    }
 
     // ---- Street transition ----
     // A street ends when both players have acted and no bet is pending (to_call==0)
@@ -242,21 +270,8 @@ double mccfr_traverse(InfoMap& nodes,
     // We'll handle street transitions in the action application logic.
 
     // ---- Terminal: river showdown ----
-    if (street == 4) {
-        // River over: showdown
-        int all7_0[7] = {deal.hole[0][0], deal.hole[0][1],
-                         deal.board[0], deal.board[1], deal.board[2],
-                         deal.board[3], deal.board[4]};
-        int all7_1[7] = {deal.hole[1][0], deal.hole[1][1],
-                         deal.board[0], deal.board[1], deal.board[2],
-                         deal.board[3], deal.board[4]};
-        const auto& ev = handeval::get_evaluator();
-        int r0 = ev.eval7(all7_0), r1 = ev.eval7(all7_1);
-        double half_pot = pot * 0.5;
-        if (r0 < r1) return (traverser == 0) ?  half_pot : -half_pot;
-        if (r0 > r1) return (traverser == 0) ? -half_pot :  half_pot;
-        return 0.0;  // tie
-    }
+    if (street == 4)
+        return holdem_showdown(deal, pot, traverser);
 
     // ---- Determine acting player ----
     // Pre-flop: player 0 (SB/button) acts first.
@@ -298,11 +313,7 @@ double mccfr_traverse(InfoMap& nodes,
     double strat[6];
     node.get_strategy(strat);
 
-    // ---- Strategy sum update (for average strategy tracking) ----
-    double weight = 1.0;
-    if      (mode == Mode::CFR_PLUS) weight = static_cast<double>(iteration);
-    else if (mode == Mode::DCFR)     weight = static_cast<double>(iteration) *
-                                               static_cast<double>(iteration);
+    double weight = strategy_sum_weight(mode, iteration);
 
     // ---- MCCFR External Sampling ----
     if (player == traverser) {
@@ -322,56 +333,21 @@ double mccfr_traverse(InfoMap& nodes,
             double child_util;
 
             if (action == ACT_FOLD) {
-                // Traverser folds → loses what they put in
-                child_util = -pot / 2.0;  // simplified: traverser loses their half
+                child_util = -pot / 2.0;
             } else {
-                // Build next history char
-                char c;
-                if (action == ACT_CHECK_CALL && to_call <= 1e-9) c = 'x';  // check
-                else if (action == ACT_CHECK_CALL) c = 'c';                  // call
-                else c = '0' + (action - ACT_BET_33 + 1);                   // bet codes: 1,2,3,4
-
+                char c = encode_action_char(action, to_call);
                 next_hist = street_hist + c;
-
-                // Detect street-over after a call or check-check
-                bool now_street_over = false;
-                if (action == ACT_CHECK_CALL && to_call > 1e-9) {
-                    // Called: street over
-                    now_street_over = true;
-                }
-                if (action == ACT_CHECK_CALL && to_call <= 1e-9 && !next_hist.empty()
-                    && next_hist.size() >= 2 && next_hist.back() == 'x'
-                    && next_hist[next_hist.size()-2] == 'x') {
-                    // Check-check: street over
-                    now_street_over = true;
-                }
+                bool now_street_over = is_street_over(action, to_call, next_hist);
 
                 if (now_street_over && street < 3) {
-                    // Move to next street
                     std::string next_full = history + (history.empty() ? "" : "/") + next_hist + "/";
                     child_util = mccfr_traverse(nodes, deal, street + 1,
                                                  next_full, 0,
                                                  new_pot, new_stack, 0.0,
                                                  traverser, mode, iteration, rng);
                 } else if (now_street_over && street == 3) {
-                    // River over → showdown
-                    int all7_0[7] = {deal.hole[0][0], deal.hole[0][1],
-                                     deal.board[0], deal.board[1], deal.board[2],
-                                     deal.board[3], deal.board[4]};
-                    int all7_1[7] = {deal.hole[1][0], deal.hole[1][1],
-                                     deal.board[0], deal.board[1], deal.board[2],
-                                     deal.board[3], deal.board[4]};
-                    const auto& ev = handeval::get_evaluator();
-                    int r0 = ev.eval7(all7_0), r1 = ev.eval7(all7_1);
-                    double hp = new_pot * 0.5;
-                    if (r0 < r1) child_util = (traverser == 0) ?  hp : -hp;
-                    else if (r0 > r1) child_util = (traverser == 0) ? -hp : hp;
-                    else child_util = 0.0;
+                    child_util = holdem_showdown(deal, new_pot, traverser);
                 } else {
-                    std::string next_full = (history.empty() ? "" : history) +
-                                            (last_slash == std::string::npos ? "" : "") +
-                                            next_hist;
-                    // Reconstruct full history properly
                     std::string base = (last_slash == std::string::npos) ? "" :
                                        history.substr(0, last_slash + 1);
                     child_util = mccfr_traverse(nodes, deal, street,
@@ -417,25 +393,12 @@ double mccfr_traverse(InfoMap& nodes,
         apply_action(action, player, pot, stack, to_call,
                      new_pot, new_stack, new_to_call);
 
-        if (action == ACT_FOLD) {
-            // Opponent folds → traverser wins pot
+        if (action == ACT_FOLD)
             return new_pot * 0.5;
-        }
 
-        char c;
-        if (action == ACT_CHECK_CALL && to_call <= 1e-9) c = 'x';
-        else if (action == ACT_CHECK_CALL) c = 'c';
-        else c = '0' + (action - ACT_BET_33 + 1);
-
+        char c = encode_action_char(action, to_call);
         std::string next_street_hist = street_hist + c;
-
-        bool now_street_over = false;
-        if (action == ACT_CHECK_CALL && to_call > 1e-9) now_street_over = true;
-        if (action == ACT_CHECK_CALL && to_call <= 1e-9
-            && next_street_hist.size() >= 2
-            && next_street_hist.back() == 'x'
-            && next_street_hist[next_street_hist.size()-2] == 'x')
-            now_street_over = true;
+        bool now_street_over = is_street_over(action, to_call, next_street_hist);
 
         std::string base_hist = (last_slash == std::string::npos) ? "" :
                                  history.substr(0, last_slash + 1);
@@ -446,18 +409,7 @@ double mccfr_traverse(InfoMap& nodes,
                                    0, new_pot, new_stack, 0.0,
                                    traverser, mode, iteration, rng);
         } else if (now_street_over && street == 3) {
-            int all7_0[7] = {deal.hole[0][0], deal.hole[0][1],
-                             deal.board[0], deal.board[1], deal.board[2],
-                             deal.board[3], deal.board[4]};
-            int all7_1[7] = {deal.hole[1][0], deal.hole[1][1],
-                             deal.board[0], deal.board[1], deal.board[2],
-                             deal.board[3], deal.board[4]};
-            const auto& ev = handeval::get_evaluator();
-            int r0 = ev.eval7(all7_0), r1 = ev.eval7(all7_1);
-            double hp = new_pot * 0.5;
-            if (r0 < r1) return (traverser == 0) ?  hp : -hp;
-            if (r0 > r1) return (traverser == 0) ? -hp :  hp;
-            return 0.0;
+            return holdem_showdown(deal, new_pot, traverser);
         }
 
         return mccfr_traverse(nodes, deal, street,
@@ -478,15 +430,8 @@ std::vector<std::pair<int,double>> train_holdem(InfoMap& nodes,
     std::vector<std::pair<int,double>> curve;
 
     for (int t = 1; t <= iterations; t++) {
-        // DCFR: discount positive regrets before this iteration
-        if (mode == Mode::DCFR) {
-            double alpha  = 1.5;
-            double pt     = std::pow(static_cast<double>(t), alpha);
-            double factor = pt / (pt + 1.0);
-            for (auto& [key, nd] : nodes)
-                for (int a = 0; a < nd.num_actions; a++)
-                    nd.regret_sum[a] = std::max(nd.regret_sum[a], 0.0) * factor;
-        }
+        if (mode == Mode::DCFR)
+            dcfr_discount_regrets(nodes, t);
 
         // Sample a deal and run MCCFR for both players
         HoldemDeal deal = sample_deal(rng);
@@ -500,13 +445,10 @@ std::vector<std::pair<int,double>> train_holdem(InfoMap& nodes,
                             traverser, mode, t, rng);
         }
 
-        // CFR+ / DCFR: floor regrets after traversal
-        if (mode == Mode::CFR_PLUS || mode == Mode::DCFR) {
-            for (auto& [key, nd] : nodes)
-                nd.floor_regrets();
-        }
+        if (mode == Mode::CFR_PLUS || mode == Mode::DCFR)
+            floor_all_regrets(nodes);
 
-        if (t == 1 || t % eval_every == 0 || t == iterations) {
+        if (should_eval(t, eval_every, iterations)) {
             double expl = holdem_exploitability_estimate(nodes, 500);
             curve.push_back({t, expl});
             if (t % (eval_every * 5) == 0)

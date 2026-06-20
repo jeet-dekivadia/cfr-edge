@@ -1,4 +1,5 @@
 #include "abstraction.h"
+#include "cfr_utils.h"
 #include "leduc.h"
 #include "leduc_utils.h"
 #include <algorithm>
@@ -169,10 +170,7 @@ static double abstract_cfr(InfoMap& nodes,
     for (int i = 0; i < na; i++)
         node.regret_sum[i] += cf * sign * (util[i] - nutil);
 
-    double weight;
-    if      (cfg.cfr_mode == Mode::CFR_PLUS) weight = (double)iteration;
-    else if (cfg.cfr_mode == Mode::DCFR)     weight = (double)iteration * (double)iteration;
-    else                                      weight = 1.0;
+    double weight = strategy_sum_weight(cfg.cfr_mode, iteration);
 
     for (int i = 0; i < na; i++)
         node.strategy_sum[i] += weight * my * strat[i];
@@ -336,15 +334,8 @@ AbstractResult run_abstraction_experiment(const AbstractConfig& config) {
     AbstractResult result;
 
     for (int t = 1; t <= config.iterations; t++) {
-        // DCFR discount
-        if (config.cfr_mode == Mode::DCFR) {
-            double alpha  = 1.5;
-            double pt     = std::pow((double)t, alpha);
-            double factor = pt / (pt + 1.0);
-            for (auto& [key, node] : abstract_nodes)
-                for (int a = 0; a < node.num_actions; a++)
-                    node.regret_sum[a] = std::max(node.regret_sum[a], 0.0) * factor;
-        }
+        if (config.cfr_mode == Mode::DCFR)
+            dcfr_discount_regrets(abstract_nodes, t);
 
         for (const auto& deal : deals) {
             int chips[2] = {1, 1};
@@ -352,13 +343,10 @@ AbstractResult run_abstraction_experiment(const AbstractConfig& config) {
                          deal.prob, deal.prob, config, t);
         }
 
-        // CFR+ / DCFR: floor regrets after all deals
-        if (config.cfr_mode == Mode::CFR_PLUS || config.cfr_mode == Mode::DCFR) {
-            for (auto& [key, node] : abstract_nodes)
-                node.floor_regrets();
-        }
+        if (config.cfr_mode == Mode::CFR_PLUS || config.cfr_mode == Mode::DCFR)
+            floor_all_regrets(abstract_nodes);
 
-        if (t == 1 || t % config.eval_every == 0 || t == config.iterations) {
+        if (should_eval(t, config.eval_every, config.iterations)) {
             // Evaluate exploitability within the abstract game (correct measurement).
             double expl = abstract_exploitability(abstract_nodes, config);
             result.exploit_curve.push_back({t, expl});
